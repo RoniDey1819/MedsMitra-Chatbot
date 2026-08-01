@@ -1,0 +1,11 @@
+Medicine_ID,Medicine_Name,Strength,Use_Case,Alternative,Stock,Dosage_Instruction
+1,Paracetamol,500mg,"Fever, Headache","Crocin, Dolo",Yes,1 tablet every 6 hrs
+2,Amoxicillin,250mg,Bacterial Infection,Augmentin,No,1 capsule every 8 hrs
+3,Cetirizine,10mg,"Allergy, Cold",Levocetirizine,Yes,1 tablet at night
+4,Metformin,500mg,Diabetes,Glimepiride,Yes,1 tablet after meals
+5,Ibuprofen,400mg,"Pain, Inflammation",Diclofenac,No,1 tablet every 8 hrs
+6,Ranitidine,150mg,Acidity,Famotidine,Yes,1 tablet before meals
+7,ORS Solution,200ml,Dehydration,Electral Powder,Yes,"As directed, sip slowly"
+8,Vitamin C,500mg,Immunity Boost,Zincovit,Yes,1 tablet daily
+9,Azithromycin,500mg,Throat Infection,Clarithromycin,Yes,1 tablet daily for 3 days
+10,Insulin,10ml,Diabetes,Human Mixtard,No,As prescribed by doctor
