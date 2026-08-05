@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicines Online — PharmEasy</title>
+    <meta name="description" content="Order prescription and over-the-counter medicines online with genuine products and doorstep delivery.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <div class="topbar">
+        <div class="topbar-inner">
+            <span><i class="fa-solid fa-phone"></i>24x7 Pharmacist Support: +91-900-900-8577</span>
+            <span><i class="fa-solid fa-truck-fast"></i>Free delivery on prepaid orders above &#8377;500</span>
+        </div>
+    </div>
+    <header>
+        <nav class="navbar navbar-expand-lg main-nav sticky-top">
+            <div class="container-x d-flex w-100 align-items-center">
+                <a class="navbar-brand" href="index.html"><i class="fa-solid fa-mortar-pestle"></i>PharmEasy</a>
+                <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                        <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="medicines.html">Medicines</a></li>
+                        <li class="nav-item"><a class="nav-link" href="healthcare.html">Health Care</a></li>
+                        <li class="nav-item"><a class="nav-link" href="labtest.html">Lab Tests</a></li>
+                        <li class="nav-item"><a class="nav-link" href="consultdoctor.html">Consult Doctors</a></li>
+                        <li class="nav-item"><a class="nav-link" href="blog.html">Blog</a></li>
+                        <li class="nav-item"><a class="nav-link" href="contact.html">Contact Us</a></li>
+                    </ul>
+                    <ul class="navbar-nav nav-icons">
+                        <li class="nav-item"><a class="nav-link" href="profile.html" title="Account"><i class="fa-solid fa-user"></i></a></li>
+                        <li class="nav-item"><a class="nav-link" href="addtocart.html" title="Cart"><i class="fa-solid fa-cart-shopping"></i><span class="cart-count">3</span></a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="page-head">
+        <div class="container-x">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+                    <li class="breadcrumb-item active">Medicines</li>
+                </ol>
+            </nav>
+            <h2>Medicines</h2>
+            <p style="color:var(--muted); margin-bottom:0;">Genuine medicines from licensed distributors, with pharmacist-verified prescriptions.</p>
+        </div>
+    </div>
+
+    <section class="block">
+        <div class="container-x">
+            <div class="row g-4">
+                <!-- Sidebar filters -->
+                <div class="col-lg-3">
+                    <div class="filter-card">
+                        <h6>Upload prescription</h6>
+                        <button class="btn-outline-brand w-100" type="button"><i class="fa-solid fa-file-arrow-up me-1"></i> Upload &amp; Order</button>
+
+                        <h6>Categories</h6>
+                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="c1" checked><label class="form-check-label" for="c1">Pain Relief</label></div>
+                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="c2"><label class="form-check-label" for="c2">Cold, Cough &amp; Fever</label></div>
+                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="c3"><label class="form-check-label" for="c3">Digestive Care</label></div>
+                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="c4"><label class="form-check-label" for="c4">Vitamins &amp; Supplements</label></div>
+                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="c5"><label class="form-check-label" for="c5">Diabetes Care</label></div>
+                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="c6"><label class="form-check-label" for="c6">Cardiac Care</label></div>
+
+                        <h6>Price</h6>
+                        <select class="form-select">
+                            <option selected>Any price</option>
+                            <option>Under &#8377;100</option>
+                            <option>&#8377;100 – &#8377;300</option>
+                            <option>&#8377;300 – &#8377;700</option>
+                            <option>Above &#8377;700</option>
+                        </select>
+
+                        <h6>Brand</h6>
+                        <select class="form-select">
+                            <option selected>All brands</option>
+                            <option>Cipla</option>
+                            <option>Sun Pharma</option>
+                            <option>GSK</option>
+                            <option>Himalaya</option>
+                            <option>Abbott</option>
+                        </select>
+
+                        <button class="btn-brand w-100 mt-4">Apply Filters</button>
+                    </div>
+                </div>
+
+                <!-- Product grid -->
+                <div class="col-lg-9">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <p style="color:var(--muted); margin:0;">Showing 12 of 3,482 medicines</p>
+                        <select class="form-select" style="width:auto;">
+                            <option>Sort: Popularity</option>
+                            <option>Sort: Price — low to high</option>
+                            <option>Sort: Price — high to low</option>
+                            <option>Sort: Discount</option>
+                        </select>
+                    </div>
+
+                    <div class="row g-4" id="medicine-grid">
+                        <div class="col-md-4 col-6">
+                            <div class="tile product-card">
+                                <div class="img-wrap"><img src="images/Crocin.jpg" alt="Crocin Advance tablets strip"></div>
+                                <div class="body">
+                                    <div class="name">Crocin Advance, Strip of 15 Tablets</div>
+                                    <div class="meta">Paracetamol 500mg &middot; GSK</div>
+                                    <div class="price-row"><span class="price">&#8377;32</span><span class="mrp">&#8377;40</span><span class="rx-tag coral">20% OFF</span></div>
+                                    <div class="foot"><button class="btn-add" data-add-cart="Crocin Advance">Add</button></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <div class="tile product-card">
+                                <div class="img-wrap"><img src="images/Azithral.jpg" alt="Azithral 500 tablets"></div>
+                                <div class="body">
+                                    <div class="name">Azithral 500, Strip of 5 Tablets</div>
+                                    <div class="meta">Azithromycin &middot; Alembic &middot; Rx required</div>
+                                    <div class="price-row"><span class="price">&#8377;98</span><span class="mrp">&#8377;115</span><span class="rx-tag coral">15% OFF</span></div>
+                                    <div class="foot"><button class="btn-add" data-add-cart="Azithral 500">Add</button></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <div class="tile product-card">
+                                <div class="img-wrap"><img src="images/Shelcal.jpg" alt="Shelcal 500 calcium tablets"></div>
+                                <div class="body">
+                                    <div class="name">Shelcal 500, Strip of 15 Tablets</div>
+                                    <div class="meta">Calcium + Vitamin D3 &middot; Torrent</div>
+                                    <div class="price-row"><span class="price">&#8377;104</span><span class="mrp">&#8377;123</span><span class="rx-tag coral">16% OFF</span></div>
+                                    <div class="foot"><button class="btn-add" data-add-cart="Shelcal 500">Add</button></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <div class="tile product-card">
+                                <div class="img-wrap"><img src="images/Pantop.jpg" alt="Pantop 40 tablets"></div>
+                                <div class="body">
+                                    <div class="name">Pantop 40, Strip of 15 Tablets</div>
+                                    <div class="meta">Pantoprazole &middot; Aristo &middot; Rx required</div>
+                                    <div class="price-row"><span class="price">&#8377;88</span><span class="mrp">&#8377;99</span><span class="rx-tag coral">11% OFF</span></div>
+                                    <div class="foot"><button class="btn-add" data-add-cart="Pantop 40">Add</button></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <div class="tile product-card">
+                                <div class="img-wrap"><img src="images/Zincovit.jpg" alt="Zincovit multivitamin tablets"></div>
+                                <div class="body">
+                                    <div class="name">Zincovit, Strip of 15 Tablets</div>
+                                    <div class="meta">Multivitamin + Zinc &middot; Apex</div>
+                                    <div class="price-row"><span class="price">&#8377;69</span><span class="mrp">&#8377;82</span><span class="rx-tag coral">16% OFF</span></div>
+                                    <div class="foot"><button class="btn-add" data-add-cart="Zincovit">Add</button></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <div class="tile product-card">
+                                <div class="img-wrap"><img src="images/Metformin.jpg" alt="Metformin 500mg tablets"></div>
+                                <div class="body">
+                                    <div class="name">Metformin 500mg, Strip of 20 Tablets</div>
+                                    <div class="meta">Glycomet &middot; USV &middot; Rx required</div>
+                                    <div class="price-row"><span class="price">&#8377;41</span><span class="mrp">&#8377;48</span><span class="rx-tag coral">14% OFF</span></div>
+                                    <div class="foot"><button class="btn-add" data-add-cart="Metformin 500mg">Add</button></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <div class="tile product-card">
+                                <div class="img-wrap"><img src="images/Digene.jpg" alt="Digene antacid gel"></div>
+                                <div class="body">
+                                    <div class="name">Digene Gel, Bottle of 200ml</div>
+                                    <div class="meta">Antacid &middot; Abbott</div>
+                                    <div class="price-row"><span class="price">&#8377;95</span><span class="mrp">&#8377;110</span><span class="rx-tag coral">14% OFF</span></div>
+                                    <div class="foot"><button class="btn-add" data-add-cart="Digene Gel">Add</button></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <div class="tile product-card">
+                                <div class="img-wrap"><img src="images/Cetirizine.jpg" alt="Cetirizine allergy tablets"></div>
+                                <div class="body">
+                                    <div class="name">Cetirizine 10mg, Strip of 10 Tablets</div>
+                                    <div class="meta">Antihistamine &middot; Cipla</div>
+                                    <div class="price-row"><span class="price">&#8377;18</span><span class="mrp">&#8377;22</span><span class="rx-tag coral">18% OFF</span></div>
+                                    <div class="foot"><button class="btn-add" data-add-cart="Cetirizine 10mg">Add</button></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <div class="tile product-card">
+                                <div class="img-wrap"><img src="images/Omega-3.jpg" alt="Omega 3 fish oil capsules"></div>
+                                <div class="body">
+                                    <div class="name">Omega-3 Fish Oil, 60 Capsules</div>
+                                    <div class="meta">HealthKart &middot; Nutrition</div>
+                                    <div class="price-row"><span class="price">&#8377;399</span><span class="mrp">&#8377;599</span><span class="rx-tag coral">33% OFF</span></div>
+                                    <div class="foot"><button class="btn-add" data-add-cart="Omega-3 Fish Oil">Add</button></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <div class="tile product-card">
+                                <div class="img-wrap"><img src="images/Amlodipine.jpg" alt="Amlodipine blood pressure tablets"></div>
+                                <div class="body">
+                                    <div class="name">Amlodipine 5mg, Strip of 15 Tablets</div>
+                                    <div class="meta">Amlong &middot; Micro Labs &middot; Rx required</div>
+                                    <div class="price-row"><span class="price">&#8377;26</span><span class="mrp">&#8377;31</span><span class="rx-tag coral">16% OFF</span></div>
+                                    <div class="foot"><button class="btn-add" data-add-cart="Amlodipine 5mg">Add</button></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <div class="tile product-card">
+                                <div class="img-wrap"><img src="images/Crepe-Bandage.jpg" alt="Elastic crepe bandage roll"></div>
+                                <div class="body">
+                                    <div class="name">Crepe Bandage, 4 Inch Roll</div>
+                                    <div class="meta">First Aid &middot; 3M</div>
+                                    <div class="price-row"><span class="price">&#8377;58</span><span class="mrp">&#8377;65</span><span class="rx-tag coral">11% OFF</span></div>
+                                    <div class="foot"><button class="btn-add" data-add-cart="Crepe Bandage">Add</button></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-6">
+                            <div class="tile product-card">
+                                <div class="img-wrap"><img src="images/Melatonin.jpg" alt="Melatonin sleep support tablets"></div>
+                                <div class="body">
+                                    <div class="name">Melatonin 3mg, 30 Tablets</div>
+                                    <div class="meta">Sleep Support &middot; Wellbeing Nutrition</div>
+                                    <div class="price-row"><span class="price">&#8377;349</span><span class="mrp">&#8377;449</span><span class="rx-tag coral">22% OFF</span></div>
+                                    <div class="foot"><button class="btn-add" data-add-cart="Melatonin 3mg">Add</button></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <nav class="mt-5" aria-label="Medicine results pages">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="site-footer">
+        <div class="container-x footer-top">
+            <div class="row gy-4">
+                <div class="col-lg-3 col-6 footer-brand">
+                    <a class="navbar-brand" href="index.html"><i class="fa-solid fa-mortar-pestle"></i>PharmEasy</a>
+                    <p>India's trusted online pharmacy — genuine medicines, diagnostic tests and doctor consultations, delivered to your door.</p>
+                    <div class="social-icons">
+                        <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+                        <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <h5>Company</h5>
+                    <a href="#">About us</a><br>
+                    <a href="#">News &amp; Media</a><br>
+                    <a href="#">Careers</a><br>
+                    <a href="#">Terms &amp; Conditions</a><br>
+                    <a href="#">Privacy Policy</a>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <h5>Our Services</h5>
+                    <a href="medicines.html">Order Medicines</a><br>
+                    <a href="labtest.html">Book Lab Tests</a><br>
+                    <a href="consultdoctor.html">Consult Doctors</a><br>
+                    <a href="healthcare.html">Health Care Products</a><br>
+                    <a href="covidessentials.html">Covid Essentials</a>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <h5>Policies</h5>
+                    <a href="#">Order Tracking &amp; Shipping</a><br>
+                    <a href="#">Return Policy</a><br>
+                    <a href="#">Disclaimer</a><br>
+                    <a href="#">FAQs</a>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <h5>Stay in the loop</h5>
+                    <p style="color:#93A7A4; font-size:14px; margin-bottom:12px;">Health tips &amp; offers, twice a month.</p>
+                    <form class="newsletter-inline" data-demo-form="Subscribed! Check your inbox.">
+                        <input type="email" placeholder="you@example.com" required>
+                        <button class="btn-brand" style="padding:9px 18px; font-size:13px;" type="submit">Join</button>
+                    </form>
+                    <h5 style="margin-top:22px;">Contact</h5>
+                    <a href="tel:+919009008577"><i class="fa-solid fa-phone me-1"></i> +91-900-900-8577</a><br>
+                    <a href="mailto:care@pharmeasy-demo.com"><i class="fa-solid fa-envelope me-1"></i> care@pharmeasy-demo.com</a>
+                </div>
+            </div>
+        </div>
+        <div class="container-x footer-bottom">
+            <p style="margin:0;">© 2026 PharmEasy Demo. Built for learning purposes — not a real pharmacy.</p>
+            <p style="margin:0;">Made with care by Sneha Vishwakarma</p>
+        </div>
+    </footer>
+    <button class="back-to-top" aria-label="Back to top"><i class="fa-solid fa-arrow-up"></i></button>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="js/app.js"></script>
+
+  <script>
+  window.MED_CHATBOT_API_URL = "http://localhost:8010/chat";
+  window.MED_CHATBOT_ICON_URL = "images/chatbot.gif"; // or .gif
+  window.MED_CHATBOT_GREETING_TEXT = "Say hi to Med! 👋"; // customize the message
+window.MED_CHATBOT_SHOW_GREETING = true;               // turn the popup off entirely
+window.MED_CHATBOT_GREETING_DELAY_MS = 1000;             // delay before it appears
+</script>
+<script src="chatbot-widget.js"></script>
+</body>
+
+</html>
