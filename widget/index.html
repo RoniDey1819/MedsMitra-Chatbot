@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmEasy</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer"
+    />
+    <!-- CSS only -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+    <!-- JavaScript Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- navigation bar starts -->
+    <header class="header">
+        <nav class="navbar navbar-expand-lg header-nav fixed-top ">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="index.html">PharmEasy</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+                    <ul class="navbar-nav ml-auto mb-2 mb-lg-0 ms-5">
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="index.html">Home</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="medicines.html">Medicines</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="healthcare.html">Health Care</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="consultdoctor.html">Consult Doctors</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="blog.html">Blog</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="contact.html">Contact Us</a>
+                        </li>
+                        <li class="addtocart nav-item" style="font-size: 21px;" id="addtocart">
+                            <a class="nav-link" href="profile.html"><i class="fa-solid fa-user"></i></a>
+                        </li>
+                        <li class="addtocart nav-item" style="font-size: 21px;">
+                            <a class="nav-link" href="addtocart.html"><i class="fa-solid fa-cart-plus"></i></a>
+                        </li>
+
+
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <!-- navigation bar ends -->
+
+    <div class="search container w-75">
+        <h2>What are you looking for?</h2>
+        <nav class="navbar navbar-light bg-light mt-3" style="height: 70px;">
+            <div class="container-fluid w-75 pt-3 pb-3" style="margin-top: -11px;">
+                <form class="d-flex">
+                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" style="border-radius:52px;">
+                    <button class="btn btn-outline-success rounded-pill" type="submit">Search</button>
+                </form>
+            </div>
+        </nav>
+    </div>
+
+
+    <div class="services container mt-5 me-5">
+        <div class="row">
+
+            <!-- card-1 -->
+
+            <div class="col">
+                <a href="medicines.html" class="text-decoration-none text-dark">
+                    <div class="card">
+                        <img src="images/service1.webp" class="card-img-top">
+                        <div class="card-body">
+                            <div class="card-title">Medicine</div>
+                            <div class="discount card-title">UPTO 20% OFF</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+
+            <!-- card-2 -->
+            <div class="col">
+                <a href="labtest.html" class="text-decoration-none text-dark">
+                    <div class="card">
+                        <img src="images/service2.webp" class="card-img-top">
+                        <div class="card-body">
+                            <div class="card-title">Lab Tests</div>
+                            <div class="discount card-title">UPTO 70% OFF</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- card-3 -->
+            <div class="col">
+                <a href="healthcare.html" class="text-decoration-none text-dark">
+                    <div class="card">
+                        <img src="images/service3.webp" class="card-img-top">
+                        <div class="card-body">
+                            <div class="card-title">Healthcare</div>
+                            <div class="discount card-title">UPTO 60% OFF</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- card-4 -->
+            <div class="col">
+                <a href="blog.html" class="text-decoration-none text-dark">
+                    <div class="card">
+                        <img src="images/service4.webp" class="card-img-top">
+                        <div class="card-body">
+                            <div class="card-title">Health Blogs</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- card-5 -->
+            <div class="col">
+                <div class="card">
+                    <img src="images/service5.webp" class="card-img-top">
+                    <div class="card-body">
+                        <div class="card-title">PLUS</div>
+                        <div class="discount card-title">SAVE 5% EXTRA</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- card-6 -->
+            <div class="col">
+                <div class="card">
+                    <img src="images/service6.webp" class="card-img-top">
+                    <div class="card-body">
+                        <div class="card-title">Offers</div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- card-7 -->
+            <div class="col">
+                <a href="consultdoctor.html" class="text-decoration-none text-dark">
+                    <div class="card">
+                        <img src="images/service7.webp" class="card-img-top">
+                        <div class="card-body">
+                            <div class="card-title">Consult Doctors</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- carousel -->
+    <div id="carouselExampleIndicators" class="frontpage_carousel carousel slide  w-75" data-bs-ride="carousel" style="margin-left: 198px;">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1" aria-label="Slide 2"></button>
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2" aria-label="Slide 3"></button>
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="3" aria-label="Slide 4"></button>
+        </div>
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="images/carousel1.jpg" class="d-block w-100" alt="...">
+            </div>
+            <div class="carousel-item">
+                <img src="images/carousel2.jpg" class="d-block w-100" alt="...">
+            </div>
+            <div class="carousel-item">
+                <img src="images/carousel3.jpg" class="d-block w-100" alt="...">
+            </div>
+            <div class="carousel-item">
+                <img src="images/carousel4.jpg" class="d-block w-100" alt="...">
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+    <!-- carousel ends -->
+
+
+    <!-- 4 cards -->
+    <div class="container mt-5">
+        <div class="row">
+
+            <!-- card-1 -->
+            <div class="home_card col-3">
+                <div class="card text-white" style="box-shadow: 3px 3px rgb(158, 191, 228);">
+                    <img src="images/home_card1.jpg" class="card-img" alt="...">
+                    <div class="card-img-overlay">
+                        <h4 class="card-title">Order Medicine</h4>
+                        <p class="card-text">Save Upto 25% off</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- card-2 -->
+            <div class="col-3">
+                <div class="home_card card text-white" style="box-shadow: 3px 3px rgb(158, 191, 228);">
+                    <img src="images/home_card1.jpg" class="card-img" alt="...">
+                    <div class="card-img-overlay">
+                        <h4 class="card-title">Health Care Products</h4>
+                        <p class="card-text">Flat 15% off</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- card-3 -->
+            <div class="col-3">
+                <div class="home_card card text-white" style="box-shadow: 3px 3px rgb(158, 191, 228);">
+                    <img src="images/home_card1.jpg" class="card-img" alt="...">
+                    <div class="card-img-overlay">
+                        <h4 class="card-title">Beauty</h4>
+                        <p class="card-text">Save Upto 40% off</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- card-4 -->
+            <div class="col-3">
+                <div class="home_card card text-white" style="box-shadow: 3px 3px rgb(158, 191, 228);">
+                    <img src="images/home_card1.jpg" class="card-img" alt="...">
+                    <div class="card-img-overlay">
+                        <h4 class="card-title">Wellness</h4>
+                        <p class="card-text">Flat 15% off</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- shop by category section -->
+    <div class="container mt-5 ">
+        <h4>SHOP BY CATEGORY</h4>
+        <hr class="mb-5">
+
+
+
+        <div class="row text-center">
+            <!-- card-1 -->
+            <div class="col">
+                <div class="sbc card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="images/sbc1.webp" class="img-fluid rounded-start" alt="..." style="height: 50px;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-size: 16px;">Baby Care</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- card-2 -->
+            <div class="col">
+                <div class="sbc card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="images/sbc2.webp" class="img-fluid rounded-start" alt="..." style="height: 50px;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-size: 16px;">Health & Nutrition</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- card-3 -->
+            <div class="col">
+                <div class="sbc card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="images/sbc3.webp" class="img-fluid rounded-start" alt="..." style="height: 50px;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-size: 16px;">Women Care</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- card-4 -->
+            <div class="col">
+                <div class="sbc card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="images/sbc4.webp" class="img-fluid rounded-start" alt="..." style="height: 50px;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-size: 16px;">Personal Care</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- card-5 -->
+            <div class="col">
+                <div class="sbc card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="images/sbc5.webp" class="img-fluid rounded-start" alt="..." style="height: 50px;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-size: 16px;">Ayurveda</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- card-6 -->
+            <div class="col">
+                <div class="sbc card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="images/sbc6.webp" class="img-fluid rounded-start" alt="..." style="height: 50px;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-size: 16px;">Health Devices</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+
+
+
+    </div>
+
+
+
+    <!-- shop by brand section -->
+    <div class="sbb container mt-5">
+        <h4 class="">SHOP BY BRAND</h4>
+        <hr class="mb-5">
+
+
+
+        <div class="row">
+            <!-- card-1 -->
+            <div class="col-2">
+                <div class=" card">
+                    <img src="images/nivea.webp" class="card-img-top">
+                </div>
+            </div>
+
+            <!-- card-2 -->
+            <div class="col-2">
+                <div class=" card">
+                    <img src="images/pampers.webp" class="card-img-top">
+                </div>
+            </div>
+
+            <!-- card-3 -->
+            <div class="col-2">
+                <div class=" card">
+                    <img src="images/horlicks.webp" class="card-img-top">
+                </div>
+            </div>
+
+            <!-- card-4 -->
+            <div class="col-2">
+                <div class=" card">
+                    <img src="images/on.png" class="card-img-top">
+                </div>
+            </div>
+
+            <!-- card-5 -->
+            <div class="col-2">
+                <div class=" card">
+                    <img src="images/onetouch.png" class="card-img-top">
+                </div>
+            </div>
+
+            <!-- card-6 -->
+            <div class="col-2">
+                <div class=" card">
+                    <img src="images/zandu.webp" class="card-img-top">
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+
+    <!-- explore popular products section starts-->
+    <div class="container mt-5">
+        <h4 class="">EXPLORE - POPULAR PRODUCTS</h4>
+        <hr class="mb-5">
+
+        <div id="carouselExampleControls" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <div class="row">
+                        <div class="col">
+                            <div class=" card">
+                                <img src="images/popularproducts1.webp" class="card-img-top">
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <div class=" card">
+                                <img src="images/popularproducts2.webp" class="card-img-top">
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <div class=" card">
+                                <img src="images/popularproducts3.webp" class="card-img-top">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <div class="row">
+                        <div class="col">
+                            <div class=" card">
+                                <img src="images/popularproducts3.jpg" class="card-img-top">
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <div class=" card">
+                                <img src="images/popularproducts5.jpg" class="card-img-top">
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <div class=" card">
+                                <img src="images/popularproducts6.jpg" class="card-img-top">
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="carousel-item ">
+                    <div class="row">
+                        <div class="col">
+                            <div class=" card">
+                                <img src="images/popularproducts7.jpg" class="card-img-top">
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <div class=" card">
+                                <img src="images/popularproducts2.webp" class="card-img-top">
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <div class=" card">
+                                <img src="images/popularproducts3.webp" class="card-img-top">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true" style="border: 2px solid black;border-radius:22px; background-color:rgb(13, 13, 13);color: black;" ></span>
+      <span class="visually-hidden ">Previous</span>
+    </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true" style="border: 2px solid black;border-radius:22px; background-color:rgb(13, 13, 13);color: black;"></span>
+      <span class="visually-hidden">Next</span>
+    </button>
+        </div>
+    </div>
+    <!-- explore popular products section ends-->
+
+
+
+
+
+
+
+    <!-- shop by health conditions -->
+    <div class="container mt-5">
+        <h4 class="">SHOP BY HEALTH CONDITIONS</h4>
+        <hr class="mb-5">
+
+        <div class="row">
+
+            <!-- card-1 -->
+            <div class="col">
+                <div class="sbc card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="images/healthcondition1.webp" class="img-fluid rounded-start" alt="..." style="height: 50px;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-size: 16px;">COVID Care</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+
+
+            <!-- card-2 -->
+            <div class="col">
+                <div class="sbc card mb-3" style="max-width: 540px; height: 60px;">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="images/healthcondition2.png" class="img-fluid rounded-start" alt="..." style="height: 38px; width: 38px; margin-top:7px ; ">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-size: 14px;">COVID PROTECTION</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+            <div class="col">
+                <div class="sbc card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="images/healthcondition3.webp" class="img-fluid rounded-start" alt="..." style="height: 50px;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-size: 15px;">Diabetes Care</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+            <div class="col">
+                <div class="sbc card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="images/healthcondition4.webp" class="img-fluid rounded-start" alt="..." style="height: 50px;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-size: 16px;">Liver Care</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="col">
+                <div class="sbc card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="images/healthcondition5.webp" class="img-fluid rounded-start" alt="..." style="height: 50px;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-size: 16px;">Cardiac</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="col">
+                <div class="sbc card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="images/healthcondition6.webp" class="img-fluid rounded-start" alt="..." style="height: 50px;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-size: 16px;">Pain Relief</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+    </div>
+
+
+    <!-- latest blog section -->
+    <div class="container blogs ">
+        <h6 class="text-center rounded border p-2 w-25" style="margin-left: 480px; background-color: #f6f6f6;">OUR BLOG</h6>
+        <h2 class="text-center">See Our Latest Blog</h2>
+        <div class="card-group mt-5">
+
+            <!-- card-1 -->
+            <div class="card p-1 me-4">
+                <img src="images/blog1.png" class="card-img-top" alt="...">
+                <div class="card-body">
+                    <h5 class="card-title">6 Best Onion Hair Oil In India</h5>
+                    <p class="card-text">Hair fall accompanied by dandruff, hair thinning, baldness and greying are typical issues that plague almost every one of you....</p>
+                    <button class="btn btn-success">Read More</button>
+                </div>
+            </div>
+
+            <!-- card-2 -->
+            <div class="card p-1 me-4">
+                <img src="images/blog2.png" class="card-img-top" alt="...">
+                <div class="card-body">
+                    <h5 class="card-title">Effective Home Remedies for Body Pain</h5>
+                    <p class="card-text">Table of Contents Introduction: What Causes Body Pain? Symptoms of Body Pain: Home Remedies for Body Pain: 1. Ginger....</p>
+                    <button class="btn btn-success">Read More</button>
+                </div>
+            </div>
+
+            <!-- card-3 -->
+            <div class="card p-1">
+                <img src="images/blog3.png" class="card-img-top" alt="...">
+                <div class="card-body">
+                    <h5 class="card-title">Effective Home Remedies for Swollen Legs</h5>
+                    <p class="card-text">Table of Contents Introduction: What Causes Swelling in the legs? : Symptoms of Swollen Legs: Home Remedies for Swollen Legs....</p>
+                    <button class="btn btn-success">Read More</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Users data: 4 cards -->
+    <div class="container mb-5 mt-5">
+        <div class="row text-center">
+
+            <!-- card-1 -->
+            <div class="col-3">
+                <div class="card pt-3" style="border-radius:20px; box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px; height: 220px;">
+                    <div class="card-img">
+                        <img src="images/15m.png">
+                    </div>
+                    <div class="card-body">
+                        <div class="card-title">
+                            <h5 class="text-warning">15 Million</h5>
+                        </div>
+                        <div class="card-text">
+                            <p>Registered Users as of Jun 30, 2021</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- card-2 -->
+            <div class="col-3">
+                <div class="card pt-3" style="border-radius:20px; box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px; height: 220px;">
+                    <div class="card-img">
+                        <img src="images/5.8m.png">
+                    </div>
+                    <div class="card-body">
+                        <div class="card-title">
+                            <h5 class="text-warning">5.8 Million</h5>
+                        </div>
+                        <div class="card-text">
+                            <p>Pharmacy Orders as of FY21</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- card-3 -->
+            <div class="col-3">
+                <div class="card pt-3" style="border-radius:20px; box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px; height: 220px;">
+                    <div class="card-img">
+                        <img src="images/80k.png">
+                    </div>
+                    <div class="card-body">
+                        <div class="card-title">
+                            <h5 class="text-warning">80K+</h5>
+                        </div>
+                        <div class="card-text">
+                            <p>SKUs sold in Q1FY22</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- card-4 -->
+            <div class="col-3">
+                <div class="card pt-3" style="border-radius:20px; box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px; height: 220px;">
+                    <div class="card-img">
+                        <img src="images/20k.png">
+                    </div>
+                    <div class="card-body">
+                        <div class="card-title">
+                            <h5 class="text-warning">20K</h5>
+                        </div>
+                        <div class="card-text">
+                            <p>Pin-Codes Serviced for the month of June</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- faqs -->
+    <div class="faqs container  p-3 w-50">
+        <h5 class="mt-2 mb-4">Frequently asked questions</h5>
+
+        <!-- first row -->
+        <div class="row  border-secondary border-bottom p-2">
+            <div class="col-11">
+                <p>How to order medicines online from PharmEasy Pharmacy?</p>
+            </div>
+            <div class="col-1">
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <!-- second row -->
+        <div class="row border-secondary border-bottom p-2">
+            <div class="col-11">
+                <p>Can I buy all kinds of medicine and health products online on PharmEasy Pharmacy?</p>
+            </div>
+            <div class="col-1">
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <!-- third row -->
+        <div class="row border-secondary border-bottom p-2">
+            <div class="col-11">
+                <p>Is online medicine delivery safe?</p>
+            </div>
+            <div class="col-1">
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <!-- fourth row -->
+        <div class="row border-secondary border-bottom p-2">
+            <div class="col-11">
+                <p>How can I buy prescribed medicines online through PharmEasy Pharmacy?</p>
+            </div>
+            <div class="col-1">
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <!-- fifth row -->
+        <div class="row border-secondary border-bottom p-2">
+            <div class="col-11">
+                <p>How do I know if there is a delay in delivery?</p>
+            </div>
+            <div class="col-1">
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <!-- sixth row -->
+        <div class="row border-secondary border-bottom p-2">
+            <div class="col-11">
+                <p>Can PharmEasy Pharmacy provide express delivery?</p>
+            </div>
+            <div class="col-1">
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <!-- seventh row -->
+        <div class="row border-secondary border-bottom p-2">
+            <div class="col-11">
+                <p>How can I buy PharmEasy Pharmacy products?</p>
+            </div>
+            <div class="col-1">
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <!-- eighth row -->
+        <div class="row border-secondary border-bottom p-2">
+            <div class="col-11">
+                <p>Can I track the delivery status of my order? If yes, how?</p>
+            </div>
+            <div class="col-1">
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <!-- ninth row -->
+        <div class="row border-secondary  p-2">
+            <div class="col-11">
+                <p>Does PharmEasy Pharmacy provide home delivery of medicines?</p>
+            </div>
+            <div class="col-1">
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+        </div>
+
+
+
+
+    </div>
+
+
+    <!-- footer section -->
+    <div class="footer mt-5">
+        <div class="container-fluid pt-5 pb-5">
+            <div class="row ms-5 ">
+                <div class="col-3">
+                    <h5>Company</h5>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>About us</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>News & Media</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Terms & Conditions</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Privacy Policy</p>
+                    </a>
+                </div>
+                <div class="col-3">
+                    <h5>OmniCare Stores</h5>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Store Locator</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Easy Pick Service</p>
+                    </a>
+                </div>
+                <div class="col-3">
+                    <h5>Heathcare Policy</h5>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Order Tracking & Shipping</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Return Policy</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Careers</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Disclaimer</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>FAQs</p>
+                    </a>
+                </div>
+                <div class="col-3">
+                    <h5>Contact Us</h5>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Mobile:<br>+91-900-900-8577</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Landline:<br>+91-900-900-8577</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Email:<br>customerservice@omnicare.com</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+  window.MED_CHATBOT_API_URL = "http://localhost:8010/chat";
+  </script>
+  <script src="chatbot-widget.js"></script>
+</body>
+
+</html>

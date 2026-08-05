@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">o
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <title>Medicines - PharmEasy</title>
+    <style>
+        .category {
+            background-color: #F6F6F6;
+            padding: 5px;
+            padding-left: 15px;
+            padding-right: 15px;
+            box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+        }
+        
+        .category .card {
+            border-radius: 5px;
+            border-bottom: 1px solid rgb(167, 167, 175);
+            border-right: 1px solid rgb(160, 160, 167);
+        }
+        
+        .category .card:hover {
+            background-color: rgb(234, 234, 234);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- navigation bar starts -->
+    <header class="header">
+        <nav class="navbar navbar-expand-lg header-nav fixed-top ">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="index.html">PharmEasy</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+            </button>
+                <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+                    <ul class="navbar-nav ml-auto mb-2 mb-lg-0 ms-5">
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="index.html">Home</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="medicines.html">Medicines</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="healthcare.html">Health Care</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="consultdoctor.html">Consult Doctors</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="blog.html">Blog</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="contact.html">Contact Us</a>
+                        </li>
+                        <li class="addtocart nav-item" style="font-size: 21px;" id="addtocart">
+                            <a class="nav-link" href="profile.html"><i class="fa-solid fa-user"></i></a>
+                        </li>
+                        <li class="addtocart nav-item" style="font-size: 21px;">
+                            <a class="nav-link" href="addtocart.html"><i class="fa-solid fa-cart-plus"></i></a>
+                        </li>
+
+
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <!-- navigation bar ends -->
+
+    <!-- carousel -->
+    <div class="container mt-5 p-5">
+        <div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel">
+            <ol class="carousel-indicators">
+                <li data-target="#carouselExampleIndicators" data-slide-to="0" class="active"></li>
+                <li data-target="#carouselExampleIndicators" data-slide-to="1"></li>
+                <li data-target="#carouselExampleIndicators" data-slide-to="2"></li>
+                <li data-target="#carouselExampleIndicators" data-slide-to="3"></li>
+            </ol>
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <img class="d-block w-100" src="images/1.png" alt="First slide">
+                </div>
+                <div class="carousel-item">
+                    <img class="d-block w-100" src="images/2.png" alt="Second slide">
+                </div>
+                <div class="carousel-item">
+                    <img class="d-block w-100" src="images/3.png" alt="Third slide">
+                </div>
+                <div class="carousel-item">
+                    <img class="d-block w-100" src="images/4.jpg" alt="Fourth slide">
+                </div>
+            </div>
+            <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="sr-only">Previous</span>
+            </a>
+            <a class="carousel-control-next" href="#carouselExampleIndicators" role="button" data-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="sr-only">Next</span>
+            </a>
+        </div>
+    </div>
+
+
+
+    <!-- cards -->
+
+    <!-- row-1 -->
+    <div class="category container">
+        <div class="row mt-5">
+            <div class="col-4">
+                <!-- card-1 -->
+                <a href="covidessentials.html" class="text-decoration-none text-dark">
+                    <div class="card mb-3" style="max-width: 540px;">
+                        <div class="row g-0">
+                            <div class="col-md-4">
+                                <img src="images/healthcare1.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card-body">
+                                    <h5 class="card-title">Covid Essentials</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-4">
+                <!-- card-1 -->
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="images/healthcare2.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">Personal Care</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-4">
+                <!-- card-1 -->
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="images/healthcare3.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">Health Food and Drinks</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- row-2 -->
+        <div class="row mt-5">
+            <div class="col-4">
+                <!-- card-4 -->
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="images/healthcare4.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">Beauty</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-4">
+                <!-- card-5 -->
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="images/healthcare5.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">Skin Care</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-4">
+                <!-- card-6 -->
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="images/healthcare6.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">Home Care</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- row-3 -->
+        <div class="row mt-5">
+            <div class="col-4">
+                <!-- card-7 -->
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="images/healthcare7.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">Ayurvedic Care</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-4">
+                <!-- card-8 -->
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="images/healthcare8.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">Fitness Supplements</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-4">
+                <!-- card-9 -->
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="images/healthcare9.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">Mother and Baby Care</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <!-- row-4 -->
+        <div class="row mt-5">
+            <div class="col-4">
+                <!-- card-10 -->
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="images/healthcare10.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">Healthcare Devices</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-4">
+                <!-- card-11 -->
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="images/healthcare11.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">Health Condition</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-4">
+                <!-- card-12 -->
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="images/healthcare12.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">Diabetic Care</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- row-5 -->
+        <div class="row mt-5">
+            <div class="col-4">
+                <!-- card-13 -->
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="images/healthcare13.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">Elderly Care</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-4">
+                <!-- card-14 -->
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="images/healthcare14.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">Accessories and Wearables</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-4">
+                <!-- card-15 -->
+                <div class="card mb-3" style="max-width: 540px;">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="images/healthcare15.webp" class="img-fluid rounded-start" alt="..." style="height: 80px;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">Top Products</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- footer section -->
+    <div class="footer mt-5">
+        <div class="container-fluid pt-5 pb-5">
+            <div class="row ms-5 ">
+                <div class="col-3">
+                    <h5>Company</h5>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>About us</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>News & Media</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Terms & Conditions</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Privacy Policy</p>
+                    </a>
+                </div>
+                <div class="col-3">
+                    <h5>Healthcare Stores</h5>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Store Locator</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Easy Pick Service</p>
+                    </a>
+                </div>
+                <div class="col-3">
+                    <h5>Heathcare Policy</h5>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Order Tracking & Shipping</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Return Policy</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Careers</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Disclaimer</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>FAQs</p>
+                    </a>
+                </div>
+                <div class="col-3">
+                    <h5>Contact Us</h5>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Mobile:<br>+91-900-900-8577</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Landline:<br>+91-900-900-8577</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Email:<br>customerservice@healthcare.com</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script src=" https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js " integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM " crossorigin="anonymous "></script>
+</body>
+
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmEasy</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer"
+    />
+    <!-- CSS only -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+    <!-- JavaScript Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        .cws {
+            background-color: rgb(239, 238, 238);
+        }
+        
+        .specialist .card {
+            height: 200px;
+            border: none;
+        }
+        
+        .specialist .card-text .card-body {
+            background-color: rgb(239, 238, 238);
+        }
+        
+        .specialist img {
+            height: 150px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- navigation bar starts -->
+    <header class="header">
+        <nav class="navbar navbar-expand-lg header-nav fixed-top ">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="index.html">PharmEasy</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+            </button>
+                <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
+                    <ul class="navbar-nav ml-auto mb-2 mb-lg-0 ms-5">
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="index.html">Home</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="medicines.html">Medicines</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="healthcare.html">Health Care</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="consultdoctor.html">Consult Doctors</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="blog.html">Blog</a>
+                        </li>
+                        <li class="nav-item menu">
+                            <a class="nav-link" href="contact.html">Contact Us</a>
+                        </li>
+                        <li class="addtocart nav-item" style="font-size: 21px;" id="addtocart">
+                            <a class="nav-link" href="profile.html"><i class="fa-solid fa-user"></i></a>
+                        </li>
+                        <li class="addtocart nav-item" style="font-size: 21px;">
+                            <a class="nav-link" href="addtocart.html"><i class="fa-solid fa-cart-plus"></i></a>
+                        </li>
+
+
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <!-- navigation bar ends -->
+
+
+    <div class="container " style="margin-top: 123px; font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;">
+        <div class="row">
+            <div class="col-6">
+                <h2>Consult with Doctors across 22+ <br>Specialities, <br>over Chat, Video & Voice call.</h2>
+                <h4>Skip the struggle of booking appointments. <br> Consult a doctor at your ease</h4>
+
+                <form>
+                    <div class="mb-3 mt-5">
+                        <input type="text" class="form-control w-75" placeholder="Type query" id="exampleInputEmail1" aria-describedby="emailHelp" style="border: none; border-bottom:1px solid black;">
+                        <button type="submit" class="btn btn-danger mt-4 p-2" style="border-radius: 22px; width:360px;">Consult Now</button>
+
+                    </div>
+                </form>
+                <div class="image mt-5">
+                    <img src="images/premium.webp" class="w-100">
+                </div>
+
+            </div>
+
+            <div class="col-6">
+                <video width="620" height="540" autoplay loop muted>
+                    <source src="images/consultdoctorvideo.webm" type="video/webm">
+                  Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
+    </div>
+
+    <div class="cws container-fluid  mt-5 mb-5 pb-5">
+        <div class="container pt-4 ">
+            <h3 class="mb-5">Chat with our specialist doctors</h3>
+
+            <div class="row">
+                <!-- card-1 -->
+                <div class="specialist col-2">
+                    <div class="card">
+                        <img src="images/doctor1.webp" class="card-img-top">
+                        <div class="card-body">
+                            <div class="card-text">
+                                <p>General Physician</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- card-2 -->
+                <div class=" specialist col-2">
+                    <div class="card">
+                        <img src="images/doctor2.webp" class="card-img-top">
+                        <div class="card-body">
+                            <div class="card-text">
+                                <p>Skin and Hair Specialist</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- card-3 -->
+                <div class="specialist col-2">
+                    <div class="card">
+                        <img src="images/doctor3.webp" class="card-img-top">
+                        <div class="card-body">
+                            <div class="card-text">
+                                <p>Gynaecologist</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- card-4 -->
+                <div class="specialist col-2">
+                    <div class="card">
+                        <img src="images/doctor4.webp" class="card-img-top">
+                        <div class="card-body">
+                            <div class="card-text">
+                                <p>Bone and Joint Specialist </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- card-5 -->
+                <div class="specialist col-2">
+                    <div class="card">
+                        <img src="images/doctor5.webp" class="card-img-top">
+                        <div class="card-body">
+                            <div class="card-text">
+                                <p>Derma Care by Kaya</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- card-6 -->
+                <div class="specialist col-2">
+                    <div class="card">
+                        <img src="images/doctor6.webp" class="card-img-top">
+                        <div class="card-body">
+                            <div class="card-text">
+                                <p>Pathologist</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- footer section -->
+    <div class="footer mt-5">
+        <div class="container-fluid pt-5 pb-5">
+            <div class="row ms-5 ">
+                <div class="col-3">
+                    <h5>Company</h5>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>About us</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>News & Media</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Terms & Conditions</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Privacy Policy</p>
+                    </a>
+                </div>
+                <div class="col-3">
+                    <h5>OmniCare Stores</h5>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Store Locator</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Easy Pick Service</p>
+                    </a>
+                </div>
+                <div class="col-3">
+                    <h5>Heathcare Policy</h5>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Order Tracking & Shipping</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Return Policy</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Careers</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Disclaimer</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>FAQs</p>
+                    </a>
+                </div>
+                <div class="col-3">
+                    <h5>Contact Us</h5>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Mobile:<br>+91-900-900-8577</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Landline:<br>+91-900-900-8577</p>
+                    </a>
+                    <a href="#" class="text-decoration-none text-dark">
+                        <p>Email:<br>customerservice@omnicare.com</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+</body>
+
+</html>

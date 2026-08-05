@@ -1,0 +1,146 @@
+.search {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    margin-top: 100px;
+}
+
+.search input {
+    width: 756px;
+}
+
+.services .card {
+    height: 180px;
+    border: none;
+    width: 140px;
+}
+
+.services .card:hover {
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+}
+
+.services img {
+    height: 100px;
+    width: 120px;
+}
+
+.discount {
+    font-size: 14px;
+    color: red;
+    font-weight: 500;
+}
+
+.navbar {
+    /* background-color: #DD5353; */
+    background-color: #0078AA;
+    height: 48px;
+    padding: 12px;
+}
+
+.navbar ul li {
+    font-size: 18px;
+    font-weight: 500;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    padding: 1px;
+}
+
+.navbar-brand {
+    /* font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; */
+    font-family: cursive;
+    font-size: 19px;
+    font-weight: 600;
+    color: white;
+}
+
+.menu a {
+    color: rgb(245, 240, 240);
+    /* color: #455156; */
+}
+
+.menu a:hover {
+    /* background-color: #d6dde0; */
+    /* color: #0078AA; */
+    border-bottom: 3px solid #d6dde0;
+    color: #e0e1e1;
+}
+
+.addtocart i {
+    color: white;
+}
+
+.addtocart i:hover {
+    /* color: #0078AA; */
+    color: aliceblue;
+}
+
+#addtocart a i {
+    margin-left: 630px;
+}
+
+
+/* carousel */
+
+.frontpage_carousel {
+    margin-top: 64px;
+}
+
+
+/* 4 cards */
+
+.home_card:hover img {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+
+/* homepage shop by category cards */
+
+.sbc {
+    background-color: #ffffff;
+    color: #332b2b;
+    font-size: 17px;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.sbc {
+    height: 70px;
+}
+
+.sbc:hover {
+    background-color: rgb(251, 251, 251);
+}
+
+
+/* shop by brand */
+
+.sbb img {
+    height: 90px;
+    padding: 15px;
+    width: 180px;
+}
+
+
+/* blog section */
+
+.blogs {
+    margin-top: 102px;
+}
+
+.card-img-top {
+    height: 240px;
+}
+
+
+/* faqs section */
+
+.faqs {
+    background-color: #F6F6F6;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+    margin-top: 150px;
+}
+
+
+/* footer section */
+
+.footer {
+    /* background-color: #EDDBC0; */
+    background-color: #F6F6F6;
+}
