@@ -195,7 +195,7 @@
     </div>
     <div id="mc-status"></div>
     <div id="mc-messages"></div>
-    <div class="mc-disclaimer">Informational only — please confirm with a pharmacist.</div>
+    <div class="mc-disclaimer">Informational only. Please confirm with our pharmacist.</div>
     <div id="mc-input-row">
       <input id="mc-input" type="text" placeholder="Ask about a medicine..." />
       <button id="mc-send">Send</button>

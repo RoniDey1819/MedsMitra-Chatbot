@@ -105,23 +105,84 @@ def _fetch(session: requests.Session, url: str) -> Optional[str]:
     return resp.text
 
 
-def _extract_text(html: str, url: str) -> tuple[str, str]:
-    """Returns (title, main_text). Prefers trafilatura's boilerplate
-    removal (drops nav/footer/ads); falls back to a plain BeautifulSoup
-    text dump if that yields nothing usable."""
-    title = ""
+def _extract_products(soup: BeautifulSoup) -> list[str]:
+    """Pulls structured product data out of `.tile.product-card` blocks
+    (name / composition-or-category / brand / price / MRP / discount /
+    Rx-required) and turns each into one clean, self-contained sentence.
+
+    This matters because without it, a page listing 12+ products becomes a
+    single diluted paragraph mixing every product's name and price
+    together — a query like "price of azithral" then has to match against
+    a blob about 12 unrelated drugs instead of one focused sentence about
+    Azithral, which hurts retrieval and invites the model to mix up prices
+    between products. One product = one chunk fixes both problems.
+    """
+    chunks = []
+    for card in soup.select(".tile.product-card"):
+        name_el = card.select_one(".name")
+        if not name_el:
+            continue
+        name = name_el.get_text(strip=True)
+
+        meta_el = card.select_one(".meta")
+        meta = meta_el.get_text(strip=True) if meta_el else ""
+
+        price_el = card.select_one(".price")
+        mrp_el = card.select_one(".mrp")
+        discount_el = card.select_one(".rx-tag")
+        price = price_el.get_text(strip=True) if price_el else ""
+        mrp = mrp_el.get_text(strip=True) if mrp_el else ""
+        discount = discount_el.get_text(strip=True) if discount_el else ""
+
+        rx_required = "rx required" in meta.lower()
+
+        sentence = f"Product: {name}."
+        if meta:
+            sentence += f" {meta}."
+        if price:
+            sentence += f" Price: {price}"
+            if mrp and mrp != price:
+                sentence += f" (MRP {mrp}"
+                if discount:
+                    sentence += f", {discount}"
+                sentence += ")"
+            sentence += "."
+        sentence += " Prescription required." if rx_required else " No prescription required."
+
+        chunks.append(sentence)
+
+    return chunks
+
+
+def _extract_content(html: str, url: str) -> tuple[str, list[str]]:
+    """Returns (title, chunks) for a page: structured per-product chunks
+    (if any product cards are present) plus chunked general page text
+    (intro copy, FAQs, policies, etc.) extracted via trafilatura from the
+    remaining HTML with product cards stripped out, so the general text
+    doesn't just re-duplicate a diluted version of the same product list.
+    """
     soup = BeautifulSoup(html, "html.parser")
-    if soup.title and soup.title.string:
-        title = soup.title.string.strip()
+    title = soup.title.string.strip() if soup.title and soup.title.string else ""
 
-    text = trafilatura.extract(html, url=url, include_comments=False, include_tables=False) or ""
+    product_chunks = _extract_products(soup)
 
-    if not text.strip():
-        for tag in soup(["script", "style", "nav", "footer", "header", "noscript"]):
+    for card in soup.select(".tile.product-card"):
+        card.decompose()
+
+    remaining_html = str(soup)
+    general_text = trafilatura.extract(
+        remaining_html, url=url, include_comments=False, include_tables=False
+    ) or ""
+
+    if not general_text.strip():
+        strip_soup = BeautifulSoup(remaining_html, "html.parser")
+        for tag in strip_soup(["script", "style", "nav", "footer", "header", "noscript"]):
             tag.decompose()
-        text = soup.get_text(separator="\n", strip=True)
+        general_text = strip_soup.get_text(separator="\n", strip=True)
 
-    return title, text
+    general_chunks = _chunk_text(general_text)
+
+    return title, product_chunks + general_chunks
 
 
 def _extract_links(html: str, base_url: str, domain: str) -> list[str]:
@@ -134,9 +195,9 @@ def _extract_links(html: str, base_url: str, domain: str) -> list[str]:
     return links
 
 
-def _crawl(seed_url: str) -> dict[str, tuple[str, str]]:
+def _crawl(seed_url: str) -> dict[str, tuple[str, list[str]]]:
     """Breadth-first crawl of the site starting at seed_url, staying on the
-    same domain and respecting robots.txt. Returns {url: (title, text)}."""
+    same domain and respecting robots.txt. Returns {url: (title, chunks)}."""
     domain = urlparse(seed_url).netloc
 
     robots = RobotFileParser()
@@ -151,7 +212,7 @@ def _crawl(seed_url: str) -> dict[str, tuple[str, str]]:
 
     visited: set[str] = set()
     queue: deque[tuple[str, int]] = deque([(seed_url, 0)])
-    pages: dict[str, tuple[str, str]] = {}
+    pages: dict[str, tuple[str, list[str]]] = {}
 
     while queue and len(pages) < CRAWL_MAX_PAGES:
         url, depth = queue.popleft()
@@ -172,10 +233,12 @@ def _crawl(seed_url: str) -> dict[str, tuple[str, str]]:
         if not html:
             continue
 
-        title, text = _extract_text(html, url)
-        if text.strip() and len(text.strip()) >= MIN_CHUNK_LENGTH:
-            pages[norm] = (title, text)
-            logger.info("Crawled (%d/%d): %s", len(pages), CRAWL_MAX_PAGES, url)
+        title, chunks = _extract_content(html, url)
+        if chunks:
+            pages[norm] = (title, chunks)
+            logger.info(
+                "Crawled (%d/%d): %s (%d chunk(s))", len(pages), CRAWL_MAX_PAGES, url, len(chunks)
+            )
 
         if depth < CRAWL_MAX_DEPTH:
             for link in _extract_links(html, url, domain):
@@ -285,8 +348,8 @@ def run_crawl(embed_model: Optional[SentenceTransformer] = None) -> None:
         return
 
     records: list[tuple[str, str, int, str]] = []
-    for url, (title, text) in pages.items():
-        for i, chunk in enumerate(_chunk_text(text)):
+    for url, (title, chunks) in pages.items():
+        for i, chunk in enumerate(chunks):
             records.append((url, title, i, chunk))
 
     if not records:

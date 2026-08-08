@@ -1,4 +1,4 @@
-// PharmEasy — shared front-end behaviour (no backend; everything is simulated in-memory)
+// MedsMitra — shared front-end behaviour (no backend; everything is simulated in-memory)
 
 document.addEventListener('DOMContentLoaded', function () {
 

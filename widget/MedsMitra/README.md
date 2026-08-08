@@ -1,6 +1,6 @@
-# 💊 PharmEasy – Health & Wellness Web Platform (Frontend)
+# 💊 MedsMitra – Health & Wellness Web Platform (Frontend)
 
-PharmEasy is a responsive, multi-page frontend website built with HTML, CSS and Bootstrap 5. It simulates an online healthcare platform where users can:
+MedsMitra is a responsive, multi-page frontend website built with HTML, CSS and Bootstrap 5. It simulates an online healthcare platform where users can:
 
 - Browse and buy medicines online
 - Book diagnostic lab tests and full-body health packages
@@ -16,18 +16,18 @@ This is a redesign of the original student project, focused on a consistent desi
 
 ## 🌐 Pages
 
-| Page | File | Description |
-|---|---|---|
-| Home | `index.html` | Hero search, quick services, categories, best sellers, blog preview, stats, FAQ |
-| Medicines | `medicines.html` | Filterable medicine catalog with prescription upload |
-| Health Care | `healthcare.html` | Category & condition-based product browsing |
-| Lab Tests | `labtest.html` | Individual tests + full body health packages |
-| Consult Doctors | `consultdoctor.html` | Specialities grid, "how it works", top-rated doctors |
-| Covid Essentials | `covidessentials.html` | Masks, sanitizers, oximeters, recovery care |
-| Blog | `blog.html` | Health articles with categories & newsletter signup |
-| Contact Us | `contact.html` | Contact form, quick FAQs, support channels |
-| Sign In / Profile | `profile.html` | OTP-based sign in, social sign-in options |
-| Cart | `addtocart.html` | Cart review, coupon, order summary (new — was linked but missing) |
+| Page              | File                   | Description                                                                     |
+| ----------------- | ---------------------- | ------------------------------------------------------------------------------- |
+| Home              | `index.html`           | Hero search, quick services, categories, best sellers, blog preview, stats, FAQ |
+| Medicines         | `medicines.html`       | Filterable medicine catalog with prescription upload                            |
+| Health Care       | `healthcare.html`      | Category & condition-based product browsing                                     |
+| Lab Tests         | `labtest.html`         | Individual tests + full body health packages                                    |
+| Consult Doctors   | `consultdoctor.html`   | Specialities grid, "how it works", top-rated doctors                            |
+| Covid Essentials  | `covidessentials.html` | Masks, sanitizers, oximeters, recovery care                                     |
+| Blog              | `blog.html`            | Health articles with categories & newsletter signup                             |
+| Contact Us        | `contact.html`         | Contact form, quick FAQs, support channels                                      |
+| Sign In / Profile | `profile.html`         | OTP-based sign in, social sign-in options                                       |
+| Cart              | `addtocart.html`       | Cart review, coupon, order summary (new — was linked but missing)               |
 
 ---
 
@@ -52,7 +52,7 @@ This is a redesign of the original student project, focused on a consistent desi
 ## 📁 Folder Structure
 
 ```
-📦 PharmEasy/
+📦 MedsMitra/
  ┣ 📄 index.html
  ┣ 📄 medicines.html
  ┣ 📄 healthcare.html
