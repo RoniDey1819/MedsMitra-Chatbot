@@ -1,0 +1,315 @@
+"""
+Crawls the pharmacy's own website (auto-discovering internal links from a
+seed URL), extracts readable text, chunks it, embeds it locally, and
+upserts it into the Supabase `website_content` table (see
+supabase_setup.sql for the schema).
+
+This is what lets the chatbot answer general questions — store hours,
+location, services, return policy, etc. — using content that gets merged
+with medicine search results in app.py's retrieve_context().
+
+Standalone run (one-time or manual refresh):
+    python crawl_site.py
+
+Scheduled run: app.py can call run_crawl() on a daily cron schedule via
+APScheduler when ENABLE_WEBSITE_CRAWL_SCHEDULER=true (see app.py). In that
+case it reuses the already-loaded embedding model instead of loading a
+second copy of it.
+"""
+
+import logging
+import os
+import time
+from collections import deque
+from datetime import datetime, timezone
+from typing import Optional
+from urllib.parse import urljoin, urldefrag, urlparse
+from urllib.robotparser import RobotFileParser
+
+import psycopg2
+import requests
+import trafilatura
+from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+from psycopg2.extras import execute_values
+from sentence_transformers import SentenceTransformer
+
+logging.basicConfig(level="INFO", format="%(asctime)s | %(levelname)s | %(message)s")
+logger = logging.getLogger("crawl_site")
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")  # same Supabase connection string as load_data.py
+WEBSITE_URL = os.getenv("WEBSITE_URL")  # seed URL, e.g. https://mypharmacy.com
+
+CRAWL_MAX_PAGES = int(os.getenv("CRAWL_MAX_PAGES", "200"))
+CRAWL_MAX_DEPTH = int(os.getenv("CRAWL_MAX_DEPTH", "3"))
+CRAWL_DELAY_SECONDS = float(os.getenv("CRAWL_DELAY_SECONDS", "0.5"))  # politeness delay between requests
+CRAWL_TIMEOUT_SECONDS = float(os.getenv("CRAWL_TIMEOUT_SECONDS", "10"))
+CRAWL_USER_AGENT = os.getenv(
+    "CRAWL_USER_AGENT", "MedsMitraBot/1.0 (+website content indexer for pharmacy chatbot)"
+)
+
+CHUNK_SIZE = int(os.getenv("CRAWL_CHUNK_SIZE", "800"))       # characters per chunk
+CHUNK_OVERLAP = int(os.getenv("CRAWL_CHUNK_OVERLAP", "100"))  # characters of overlap between chunks
+MIN_CHUNK_LENGTH = int(os.getenv("CRAWL_MIN_CHUNK_LENGTH", "40"))
+
+EMBED_BATCH_SIZE = int(os.getenv("EMBED_BATCH_SIZE", "32"))
+DB_PAGE_SIZE = int(os.getenv("DB_PAGE_SIZE", "100"))
+
+EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
+
+# Extensions that are never worth fetching as "pages" (files, media, etc.)
+_SKIP_EXTENSIONS = (
+    ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".ico",
+    ".zip", ".rar", ".doc", ".docx", ".xls", ".xlsx", ".mp4", ".mp3",
+    ".css", ".js", ".woff", ".woff2", ".ttf",
+)
+_SKIP_SCHEMES = ("mailto:", "tel:", "javascript:", "#")
+
+
+# -------------------------------------------------------------------
+# Fetching & parsing
+# -------------------------------------------------------------------
+
+
+def _normalize(url: str) -> str:
+    """Strip fragment and trailing slash so equivalent URLs dedupe."""
+    url, _ = urldefrag(url)
+    if url.endswith("/") and url.count("/") > 2:
+        url = url[:-1]
+    return url
+
+
+def _same_domain(url: str, domain: str) -> bool:
+    return urlparse(url).netloc == domain
+
+
+def _is_crawlable(url: str) -> bool:
+    if any(url.lower().startswith(s) for s in _SKIP_SCHEMES):
+        return False
+    path = urlparse(url).path.lower()
+    return not path.endswith(_SKIP_EXTENSIONS)
+
+
+def _fetch(session: requests.Session, url: str) -> Optional[str]:
+    try:
+        resp = session.get(url, timeout=CRAWL_TIMEOUT_SECONDS)
+    except requests.RequestException:
+        logger.warning("Fetch failed: %s", url)
+        return None
+
+    content_type = resp.headers.get("content-type", "")
+    if resp.status_code != 200 or "text/html" not in content_type:
+        return None
+    return resp.text
+
+
+def _extract_text(html: str, url: str) -> tuple[str, str]:
+    """Returns (title, main_text). Prefers trafilatura's boilerplate
+    removal (drops nav/footer/ads); falls back to a plain BeautifulSoup
+    text dump if that yields nothing usable."""
+    title = ""
+    soup = BeautifulSoup(html, "html.parser")
+    if soup.title and soup.title.string:
+        title = soup.title.string.strip()
+
+    text = trafilatura.extract(html, url=url, include_comments=False, include_tables=False) or ""
+
+    if not text.strip():
+        for tag in soup(["script", "style", "nav", "footer", "header", "noscript"]):
+            tag.decompose()
+        text = soup.get_text(separator="\n", strip=True)
+
+    return title, text
+
+
+def _extract_links(html: str, base_url: str, domain: str) -> list[str]:
+    soup = BeautifulSoup(html, "html.parser")
+    links = []
+    for a in soup.find_all("a", href=True):
+        absolute = urljoin(base_url, a["href"])
+        if _same_domain(absolute, domain) and _is_crawlable(absolute):
+            links.append(absolute)
+    return links
+
+
+def _crawl(seed_url: str) -> dict[str, tuple[str, str]]:
+    """Breadth-first crawl of the site starting at seed_url, staying on the
+    same domain and respecting robots.txt. Returns {url: (title, text)}."""
+    domain = urlparse(seed_url).netloc
+
+    robots = RobotFileParser()
+    robots.set_url(urljoin(seed_url, "/robots.txt"))
+    try:
+        robots.read()
+    except Exception:
+        logger.warning("Could not read robots.txt for %s — proceeding without it.", domain)
+
+    session = requests.Session()
+    session.headers.update({"User-Agent": CRAWL_USER_AGENT})
+
+    visited: set[str] = set()
+    queue: deque[tuple[str, int]] = deque([(seed_url, 0)])
+    pages: dict[str, tuple[str, str]] = {}
+
+    while queue and len(pages) < CRAWL_MAX_PAGES:
+        url, depth = queue.popleft()
+        norm = _normalize(url)
+        if norm in visited or depth > CRAWL_MAX_DEPTH:
+            continue
+        visited.add(norm)
+
+        try:
+            if not robots.can_fetch(CRAWL_USER_AGENT, url):
+                logger.info("Skipping (robots.txt disallows): %s", url)
+                continue
+        except Exception:
+            pass
+
+        html = _fetch(session, url)
+        time.sleep(CRAWL_DELAY_SECONDS)
+        if not html:
+            continue
+
+        title, text = _extract_text(html, url)
+        if text.strip() and len(text.strip()) >= MIN_CHUNK_LENGTH:
+            pages[norm] = (title, text)
+            logger.info("Crawled (%d/%d): %s", len(pages), CRAWL_MAX_PAGES, url)
+
+        if depth < CRAWL_MAX_DEPTH:
+            for link in _extract_links(html, url, domain):
+                if _normalize(link) not in visited:
+                    queue.append((link, depth + 1))
+
+    return pages
+
+
+# -------------------------------------------------------------------
+# Chunking
+# -------------------------------------------------------------------
+
+
+def _chunk_text(text: str) -> list[str]:
+    """Splits text into overlapping character-based chunks, breaking on a
+    word boundary near the target size so words aren't cut mid-way."""
+    text = " ".join(text.split())  # collapse whitespace/newlines
+    if len(text) <= CHUNK_SIZE:
+        return [text] if len(text) >= MIN_CHUNK_LENGTH else []
+
+    chunks = []
+    step = max(CHUNK_SIZE - CHUNK_OVERLAP, 1)
+    start = 0
+    while start < len(text):
+        end = min(start + CHUNK_SIZE, len(text))
+        if end < len(text):
+            boundary = text.rfind(" ", start, end)
+            if boundary > start:
+                end = boundary
+        chunk = text[start:end].strip()
+        if len(chunk) >= MIN_CHUNK_LENGTH:
+            chunks.append(chunk)
+        start += step
+
+    return chunks
+
+
+# -------------------------------------------------------------------
+# Supabase upsert
+# -------------------------------------------------------------------
+
+
+def _upsert_records(
+    records: list[tuple[str, str, int, str]],  # (url, title, chunk_index, content)
+    embeddings: list[list[float]],
+    crawled_urls: list[str],
+    crawl_start: datetime,
+) -> None:
+    conn = psycopg2.connect(DATABASE_URL)
+    try:
+        cur = conn.cursor()
+
+        # Clear old chunks for every URL touched this run, so a page that
+        # shrank (fewer chunks than before) doesn't leave stale rows behind.
+        cur.execute("delete from website_content where url = any(%s)", (crawled_urls,))
+
+        insert_sql = """
+            insert into website_content (url, title, chunk_index, content, embedding, crawled_at)
+            values %s
+        """
+        values = [
+            (url, title, idx, content, emb, crawl_start)
+            for (url, title, idx, content), emb in zip(records, embeddings)
+        ]
+        execute_values(cur, insert_sql, values, page_size=DB_PAGE_SIZE)
+
+        # Anything not touched by this run (page removed, moved, or no
+        # longer reachable) is now stale — clean it up.
+        cur.execute("delete from website_content where crawled_at < %s", (crawl_start,))
+        deleted = cur.rowcount
+        if deleted:
+            logger.info("Removed %d stale chunk(s) from pages no longer found.", deleted)
+
+        conn.commit()
+        cur.close()
+    finally:
+        conn.close()
+
+
+# -------------------------------------------------------------------
+# Entry point
+# -------------------------------------------------------------------
+
+
+def run_crawl(embed_model: Optional[SentenceTransformer] = None) -> None:
+    """Crawls WEBSITE_URL and refreshes the website_content table.
+
+    Pass an already-loaded embed_model (e.g. from app.py) to avoid loading
+    a second copy of sentence-transformers when called from a scheduler.
+    """
+    if not WEBSITE_URL:
+        logger.warning("WEBSITE_URL is not set — skipping website crawl.")
+        return
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is not set. Add your Supabase connection string to .env")
+
+    crawl_start = datetime.now(timezone.utc)
+    logger.info(
+        "Starting crawl of %s (max_pages=%d, max_depth=%d)",
+        WEBSITE_URL, CRAWL_MAX_PAGES, CRAWL_MAX_DEPTH,
+    )
+
+    pages = _crawl(WEBSITE_URL)
+    if not pages:
+        logger.warning("Crawl found no pages — nothing to update.")
+        return
+
+    records: list[tuple[str, str, int, str]] = []
+    for url, (title, text) in pages.items():
+        for i, chunk in enumerate(_chunk_text(text)):
+            records.append((url, title, i, chunk))
+
+    if not records:
+        logger.warning("No usable text extracted from any crawled page.")
+        return
+
+    logger.info("Extracted %d chunks from %d pages.", len(records), len(pages))
+
+    own_model = embed_model is None
+    if own_model:
+        logger.info("Loading embedding model...")
+        embed_model = SentenceTransformer(EMBED_MODEL_NAME)
+
+    texts = [r[3] for r in records]
+    logger.info("Embedding %d chunks in batches of %d...", len(texts), EMBED_BATCH_SIZE)
+    raw_embeddings = embed_model.encode(
+        texts, batch_size=EMBED_BATCH_SIZE, show_progress_bar=True, convert_to_numpy=True,
+    )
+    embeddings = [e.tolist() for e in raw_embeddings]
+
+    _upsert_records(records, embeddings, list(pages.keys()), crawl_start)
+    logger.info("Website crawl complete — %d chunks from %d pages upserted.", len(records), len(pages))
+
+
+if __name__ == "__main__":
+    run_crawl()
