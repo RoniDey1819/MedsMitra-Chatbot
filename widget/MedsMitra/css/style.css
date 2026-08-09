@@ -22,10 +22,10 @@
   --success: #2fa84f;
   --warning: #e8a93b;
 
-  --font-display: "Fraunces", Georgia, serif;
+  --font-display: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-body:
-    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", "Courier New", monospace;
+    "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   --radius: 14px;
   --radius-sm: 8px;
