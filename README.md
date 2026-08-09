@@ -1,34 +1,75 @@
-# Medical Shop Chatbot — Setup Guide
+# MedsMitra Chatbot
 
-Two pieces:
-- **backend/** — a small Python API that looks up medicines from your CSV (RAG) and asks Grok to write the answer.
-- **widget/** — one JS file you paste into your existing HTML pages, which shows a floating chat bubble.
+MedsMitra is an AI-powered medicine assistant for online pharmacy websites. It combines a Retrieval-Augmented Generation (RAG) backend with a drop-in JavaScript chat widget, so visitors can ask natural-language questions about medicines ("Do you have Paracetamol 500mg?", "What's an alternative to X?") and get answers grounded in real inventory data instead of hallucinated ones.
 
----
+The repository has three parts:
 
-## 1. Get a free Grok API key
-
-1. Go to **console.x.ai** and sign up (this is separate from a regular X/grok.com account).
-2. Create an API key. New accounts get free starter credits, so you can test without paying.
-3. Note the exact model name shown in the console (e.g. `grok-4-fast`) — model names change over time, so use whatever's current there.
+| Folder | What it is |
+| --- | --- |
+| `backend/` | A FastAPI service that embeds a medicine catalog, performs vector similarity search in Supabase (pgvector), and streams answers from an LLM |
+| `widget/MedsMitra/` | A full static demo pharmacy website (HTML/CSS/JS, Bootstrap 5) used to showcase the widget in context |
+| `widget/chatbot-widget.js` | The embeddable chat widget itself — a single script that can be dropped into any existing website |
 
 ---
 
-## 2. Set up the Supabase table
+## How it works
 
-1. Open your Supabase project → **SQL Editor**.
-2. Paste in the contents of `backend/supabase_setup.sql` and run it. This:
-   - enables the `pgvector` extension
-   - creates a `medicines` table (with a `vector(384)` column for embeddings)
-   - creates a `match_medicines` function the backend calls to do similarity search
-3. Grab two things from **Project Settings → API**:
-   - **Project URL** → `SUPABASE_URL`
-   - **service_role key** (not the anon key — this runs server-side only) → `SUPABASE_SERVICE_KEY`
-4. Grab your **Database → Connection string** (URI, "Session pooler" or direct connection) → `DATABASE_URL`. This is only used by `load_data.py` to write rows directly.
+1. A visitor types a question into the chat widget.
+2. The backend rewrites follow-up questions into a standalone query using recent conversation history.
+3. The query is embedded locally (`sentence-transformers`) and matched against medicine records in Supabase via a `match_medicines` Postgres function using pgvector cosine similarity.
+4. The top matching medicines are passed as context to an LLM (Groq), which is instructed to answer only from that context.
+5. The answer is streamed back to the widget over Server-Sent Events (SSE) and rendered in the chat bubble.
+6. Conversation history per session is cached in Redis (Upstash) so follow-up questions retain context.
+
+This keeps answers grounded in real stock and dosage data rather than invented information.
 
 ---
 
-## 3. Run the backend locally (test first)
+## Tech stack
+
+**Backend**
+- FastAPI + Uvicorn
+- Supabase (Postgres + pgvector) for vector storage and similarity search
+- `sentence-transformers` (`all-MiniLM-L6-v2`) for local embeddings
+- Groq (OpenAI-compatible client) for the LLM response
+- Upstash Redis for per-session conversation history
+- `trafilatura` / `beautifulsoup4` for optional site crawling (`crawl_site.py`)
+
+**Widget & demo site**
+- Vanilla JavaScript (no build step, no framework dependency)
+- Bootstrap 5.3 for the demo site layout
+- Font Awesome 6.5 icons
+
+---
+
+## Repository structure
+
+```
+MedsMitra-Chatbot-main/
+├── backend/
+│   ├── app.py                 FastAPI app: RAG pipeline + chat endpoint
+│   ├── load_data.py           Embeds medicines.csv and upserts into Supabase
+│   ├── crawl_site.py          Optional helper to crawl a site for extra context
+│   ├── medicines.csv          Sample medicine inventory data
+│   ├── supabase_setup.sql     SQL to enable pgvector and create tables/functions
+│   └── requirements.txt
+├── widget/
+│   ├── chatbot-widget.js      Standalone embeddable chat widget
+│   ├── frontend.html          Minimal example page using the widget
+│   └── MedsMitra/             Full static demo pharmacy website
+│       ├── index.html, medicines.html, healthcare.html, labtest.html,
+│       │   consultdoctor.html, covidessentials.html, blog.html,
+│       │   contact.html, profile.html, addtocart.html
+│       ├── css/style.css
+│       └── js/app.js
+└── README.md
+```
+
+---
+
+## Getting started
+
+Quick start for the backend:
 
 ```bash
 cd backend
@@ -37,97 +78,48 @@ source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 cp .env.example .env
-# edit .env: XAI_API_KEY, XAI_MODEL, SUPABASE_URL, SUPABASE_SERVICE_KEY, DATABASE_URL
-# leave ALLOWED_ORIGIN=* for now
-```
+# fill in API keys and Supabase credentials
 
-Load your medicine data into Supabase (embeds locally with sentence-transformers, no API cost):
-```bash
-python load_data.py
-```
-First run downloads the embedding model (~90MB) and caches it. You'll see the rows getting embedded and upserted.
-
-Now start the API:
-```bash
+python load_data.py           # embeds medicines.csv into Supabase
 uvicorn app:app --reload --port 8000
 ```
 
-Test it:
-```bash
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Do you have Paracetamol 500mg?"}'
-```
-You should get back a JSON reply mentioning stock status, dosage, and alternatives.
-
----
-
-## 4. Update the medicine data
-
-Edit `backend/medicines.csv` with your real inventory — same columns:
-`Medicine_ID, Medicine_Name, Strength, Use_Case, Alternative, Stock, Dosage_Instruction`
-
-Whenever you change the CSV, re-run:
-```bash
-python load_data.py
-```
-It upserts by `Medicine_ID`, so existing rows get updated in place and new IDs get added. Data now lives permanently in Supabase — it survives redeploys, unlike the old local ChromaDB file.
-
----
-
-## 5. Deploy the backend (Render example — Railway is nearly identical)
-
-1. Push the `backend/` folder to a GitHub repo. (`load_data.py` and `supabase_setup.sql` don't need to run on the server — you run those from your own machine whenever data changes. Only `app.py` needs to be live.)
-2. On [render.com](https://render.com) → **New + Web Service** → connect the repo.
-3. Settings:
-   - **Build command:** `pip install -r requirements.txt`
-   - **Start command:** `uvicorn app:app --host 0.0.0.0 --port $PORT`
-4. Add environment variables (Render dashboard → Environment):
-   - `XAI_API_KEY` = your key
-   - `XAI_MODEL` = e.g. `grok-4-fast`
-   - `ALLOWED_ORIGIN` = your real website URL, e.g. `https://www.yourpharmacy.com`
-   - `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` = from Supabase project settings
-   - (you do **not** need `DATABASE_URL` on the server — that's only for `load_data.py`, which you run locally)
-5. Deploy. Render gives you a URL like `https://medshop-chatbot.onrender.com`.
-6. Confirm it's alive: visit `https://medshop-chatbot.onrender.com/health` → should show `{"status":"ok"}`.
-
-**Notes:**
-- Free tiers on Render spin down when idle, so the first message after a quiet period can take ~30–50 seconds. Normal, not a bug.
-- `sentence-transformers` pulls in PyTorch, which is fairly heavy (roughly 1–2GB installed) and needs more RAM than Render's free 512MB tier typically allows. If the free instance crashes on startup or during embedding, either upgrade to Render's Starter tier (512MB → more RAM), or swap the embedding step for a hosted API (e.g. OpenAI's `text-embedding-3-small`) so the server doesn't need PyTorch at all — ask if you want that version instead.
-
----
-
-## 6. Add the chatbot to your website
-
-Upload `widget/chatbot-widget.js` to your website's files (anywhere, e.g. `/js/chatbot-widget.js`), then add this near the end of `<body>` on every page you want the chat bubble to appear:
+Then add the widget to any HTML page:
 
 ```html
 <script>
-  window.MED_CHATBOT_API_URL = "https://medshop-chatbot.onrender.com/chat";
+  window.MED_CHATBOT_API_URL = "http://localhost:8000/chat";
 </script>
 <script src="/js/chatbot-widget.js"></script>
 ```
 
-That's it — a chat bubble appears bottom-right. No build tools, no framework needed since your site is plain HTML/CSS/JS.
+For full setup details — including creating a Groq API key, configuring Supabase, environment variables, and deploying to Render — see the [backend setup guide](README.setup-guide.md).
+
+For the demo pharmacy site, open [`widget/MedsMitra/index.html`](widget/MedsMitra) directly in a browser, or see [`widget/MedsMitra/README.md`](widget/MedsMitra/README.md) for a page-by-page breakdown and design system notes.
 
 ---
 
-## 7. How it actually answers questions (the RAG part)
+## Updating medicine data
 
-1. User types a question in the widget → sent to your backend's `/chat` endpoint.
-2. The backend embeds the question locally (same `all-MiniLM-L6-v2` model used to load the data) and calls the `match_medicines` Postgres function in Supabase via RPC, which does a cosine-similarity search over the `embedding` column using pgvector.
-3. The top 3 matching medicine rows come back as "context."
-4. That context + the user's question go to Grok, with instructions to answer **only** from that context and never invent stock/dosage info.
-5. Grok's answer is sent back and shown in the widget.
+Edit `backend/medicines.csv` with real inventory (columns: `Medicine_ID, Medicine_Name, Strength, Use_Case, Alternative, Stock, Dosage_Instruction`), then re-run:
 
-This means the bot won't hallucinate medicines you don't stock — it's grounded in your actual Supabase data, and that data now persists properly (redeploying the backend no longer wipes it, since it's no longer in a local file on disk).
+```bash
+python load_data.py
+```
+
+Rows are upserted by `Medicine_ID`, so existing entries are updated in place and new ones are added.
 
 ---
 
-## 8. Things worth doing before going live
+## Notes before going live
 
-- **Restrict CORS**: set `ALLOWED_ORIGIN` to your real domain (not `*`) so random sites can't call your API and burn your Grok credits.
-- **Rate limiting**: consider adding basic rate limiting (e.g. `slowapi`) so one visitor can't spam requests.
-- **Medical disclaimer**: the system prompt already tells the bot to recommend confirming with a pharmacist — keep that, since this is guidance, not medical advice.
-- **Row Level Security**: the backend uses the Supabase **service_role** key, which bypasses RLS — that's fine since it only runs server-side and is never exposed to the browser. Never put the service_role key in the widget or any frontend code.
-- **Bigger inventory**: pgvector with an `ivfflat` index (as set up in `supabase_setup.sql`) comfortably handles tens of thousands of rows. If you grow past that, revisit the index type (e.g. `hnsw`) and Supabase's compute tier.
+- Restrict CORS to a real domain via the `ALLOWED_ORIGIN` environment variable.
+- Never expose the Supabase `service_role` key in frontend code — it is used server-side only.
+- Consider adding rate limiting so a single visitor can't exhaust API credits.
+- The demo site in `widget/MedsMitra/` is a static frontend only; its cart, sign-in, and checkout flows are simulated in the browser and do not persist data or call a real backend.
+
+---
+
+## License
+
+No license file is currently included. Add one if this project is intended to be open source.
