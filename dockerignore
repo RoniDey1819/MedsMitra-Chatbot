@@ -1,0 +1,34 @@
+# Version control
+.git
+.gitignore
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/venv/
+**/.venv/
+**/*.egg-info/
+
+# Environment / secrets — never bake these into the image
+**/.env
+**/.env.*
+!**/.env.example
+
+# Docs (not needed inside the image)
+README.md
+README.setup-guide.md
+CONTRIBUTING.md
+LICENSE
+
+# Frontend widget & demo site — not part of the backend image
+widget/
+
+# Editor/OS cruft
+.vscode/
+.idea/
+.DS_Store
+
+# Docker itself
+Dockerfile
+.dockerignore
+docker-compose.yml

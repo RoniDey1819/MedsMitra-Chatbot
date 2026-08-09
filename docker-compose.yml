@@ -1,0 +1,26 @@
+# Place this file in the repository root, alongside the Dockerfile.
+#
+# Usage:
+#   cp backend.env.example backend/.env   # then fill in real values
+#   docker compose up --build
+#
+# The API will be available at http://localhost:8000
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: medsmitra-backend
+    container_name: medsmitra-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - backend/.env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
