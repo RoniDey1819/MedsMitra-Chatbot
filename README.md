@@ -122,4 +122,4 @@ Rows are upserted by `Medicine_ID`, so existing entries are updated in place and
 
 ## License
 
-No license file is currently included. Add one if this project is intended to be open source.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
