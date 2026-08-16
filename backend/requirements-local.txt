@@ -1,0 +1,7 @@
+# Extra dependency needed only to run load_data.py or crawl_site.py locally
+# with local embeddings, instead of app.py's Hugging Face Inference API path.
+#
+# Install with:
+#   pip install -r requirements.txt -r requirements-local.txt
+
+sentence-transformers==3.1.1

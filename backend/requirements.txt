@@ -5,9 +5,14 @@ python-dotenv==1.0.1
 pydantic==2.9.2
 supabase==2.9.1
 psycopg2-binary==2.9.9
-sentence-transformers==3.1.1
 upstash-redis==1.2.0
 requests==2.32.3
 beautifulsoup4==4.12.3
 trafilatura==1.12.2
 apscheduler==3.10.4
+
+# NOT required by app.py (which now calls the Hugging Face Inference API for
+# embeddings via hf_embedder.py). Only needed if you run load_data.py or
+# crawl_site.py locally with local embeddings instead. Install separately
+# with `pip install -r requirements-local.txt` when needed.
+# sentence-transformers==3.1.1

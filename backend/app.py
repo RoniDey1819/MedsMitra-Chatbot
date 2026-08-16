@@ -29,7 +29,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from openai import OpenAI
 from pydantic import BaseModel, Field, field_validator
-from sentence_transformers import SentenceTransformer
+from hf_embedder import HFEmbedder
 from supabase import create_client
 from upstash_redis import Redis
 
@@ -128,9 +128,9 @@ redis_client = Redis(url=UPSTASH_REDIS_REST_URL, token=UPSTASH_REDIS_REST_TOKEN)
 # Embedding Model
 # -------------------------------------------------------------------
 
-logger.info("Loading embedding model...")
-embed_model = SentenceTransformer("all-MiniLM-L6-v2")
-logger.info("Embedding model loaded.")
+logger.info("Initializing embedding client (Hugging Face Inference API)...")
+embed_model = HFEmbedder()
+logger.info("Embedding client ready.")
 
 # -------------------------------------------------------------------
 # Website crawl scheduler (optional)
@@ -362,7 +362,7 @@ def retrieve_context(
     in_stock_only: Optional[bool] = None,
 ) -> tuple[Optional[str], list[dict]]:
     try:
-        raw_embedding = embed_model.encode(question).tolist()
+        raw_embedding = embed_model.encode(question, show_progress_bar=False).tolist()
     except Exception:
         logger.exception("Embedding failed for question=%r", question)
         raise HTTPException(status_code=500, detail="Failed to process your question.")
