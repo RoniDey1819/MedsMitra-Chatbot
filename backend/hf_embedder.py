@@ -31,7 +31,7 @@ logger = logging.getLogger("medsmitra.hf_embedder")
 
 HF_API_TOKEN = os.getenv("HF_API_TOKEN")
 HF_EMBED_MODEL = os.getenv("HF_EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
-HF_API_URL = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{HF_EMBED_MODEL}"
+HF_API_URL = f"https://router.huggingface.co/hf-inference/models/{HF_EMBED_MODEL}/pipeline/feature-extraction"
 
 HF_TIMEOUT_SECONDS = float(os.getenv("HF_EMBED_TIMEOUT", "20"))
 HF_MAX_RETRIES = int(os.getenv("HF_EMBED_MAX_RETRIES", "3"))
@@ -57,7 +57,7 @@ class HFEmbedder:
                 "https://huggingface.co/settings/tokens and add it to your env."
             )
         self.model = model
-        self.url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model}"
+        self.url = f"https://router.huggingface.co/hf-inference/models/{model}/pipeline/feature-extraction"
         self._headers = {"Authorization": f"Bearer {token}"}
 
     def encode(
