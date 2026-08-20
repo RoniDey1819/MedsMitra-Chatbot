@@ -316,6 +316,43 @@ def clear_history(session_id: str) -> None:
 # -------------------------------------------------------------------
 
 
+_PRONOUN_PATTERN = re.compile(r"\b(it|this|that|those|these)\b", re.I)
+
+# Matches "Medicine: <Name> (...)" — the exact prefix row_to_text() in
+# load_data.py generates in the retrieval context. We look for this literal
+# label first since it's unambiguous; only fall back to a loose capitalized-
+# word scan (excluding common sentence-starters) if that's absent.
+_MEDICINE_LABEL = re.compile(r"Medicine:\s*([A-Za-z0-9][\w\- ]*?)(?:\s*\(|\.)")
+_CAPITALIZED_WORD = re.compile(r"\b([A-Z][a-z]{2,}(?:\s[A-Z0-9][a-zA-Z0-9]*)?)\b")
+_COMMON_SENTENCE_STARTERS = {
+    "yes", "no", "please", "sure", "sorry", "would", "could", "consult",
+    "the", "this", "that", "i", "we", "you",
+}
+
+
+def _last_mentioned_medicine(history: list[dict]) -> Optional[str]:
+    """Best-effort scan of recent history for the medicine most recently
+    discussed, most recent first. Prefers the exact "Medicine: <Name>"
+    label from retrieval context if visible in an assistant turn; falls
+    back to a loose capitalized-token scan (skipping common sentence-
+    starter words) otherwise. Not a substitute for real entity tracking —
+    just a deterministic backstop for when the LLM rewrite leaves a
+    pronoun unresolved."""
+    for turn in reversed(history[-6:]):
+        if turn.get("role") != "assistant":
+            continue
+        content = turn.get("content", "")
+
+        label_match = _MEDICINE_LABEL.search(content)
+        if label_match:
+            return label_match.group(1).strip()
+
+        for candidate in _CAPITALIZED_WORD.findall(content):
+            if candidate.lower() not in _COMMON_SENTENCE_STARTERS:
+                return candidate
+    return None
+
+
 def rewrite_query(question: str, history: list[dict]) -> str:
     """
     Turns a context-dependent follow-up ("what about its dosage?") into a
@@ -328,14 +365,25 @@ def rewrite_query(question: str, history: list[dict]) -> str:
 
     history_text = "\n".join(f"{h['role']}: {h['content']}" for h in history[-6:])
     rewrite_prompt = (
-    f"Conversation history:\n{history_text}\n\n"
-    f'Latest user message: "{question}"\n\n'
-    "Rewrite the latest user message as a short, standalone question. "
-    "If it uses a pronoun like 'it', 'this', 'those' or 'that', replace it with the "
-    "specific medicine name most recently discussed in the conversation. "
-    "Respond with ONLY the rewritten question and nothing else."
+        f"Conversation history:\n{history_text}\n\n"
+        f'Latest user message: "{question}"\n\n'
+        "Rewrite the latest user message as a short, standalone search query "
+        "for a pharmacy database — the kind of phrase you'd type into a "
+        "search box, not a full sentence or question. Keep it under 8 words.\n\n"
+        "Rules:\n"
+        "- If it uses a pronoun ('it', 'this', 'those', 'that') or an implied "
+        "subject, replace it with the specific medicine, doctor, test, or "
+        "topic most recently discussed.\n"
+        "- Preserve the original intent exactly — don't add words like "
+        "'please', 'can you', or turn it into a polite question.\n"
+        "- Use plain keyword phrasing, e.g. 'alternative to Paracetamol' not "
+        "'What is the alternative medicine for Paracetamol?'.\n"
+        "- If the message is already a short standalone query with no "
+        "pronouns to resolve, return it unchanged (only fix obvious typos).\n\n"
+        "Respond with ONLY the rewritten query and nothing else."
     )
 
+    result = question
     try:
         resp = groq_client.chat.completions.create(
             model=GROQ_MODEL,
@@ -344,10 +392,36 @@ def rewrite_query(question: str, history: list[dict]) -> str:
             max_tokens=60,
         )
         rewritten = (resp.choices[0].message.content or "").strip().strip('"')
-        return rewritten or question
+        result = rewritten or question
     except Exception:
         logger.exception("Query rewrite failed, falling back to raw question")
-        return question
+        result = question
+
+    # If the question had an unresolved pronoun and the rewrite didn't
+    # actually change anything (LLM failure mode observed in production:
+    # it silently echoed the input back instead of substituting), try a
+    # cheap deterministic fallback before giving up — pull the most
+    # recently mentioned medicine name from assistant history and splice
+    # it in. This has no LLM round-trip, so it can't fail the same way.
+    if result == question and _PRONOUN_PATTERN.search(question):
+        fallback_subject = _last_mentioned_medicine(history)
+        if fallback_subject:
+            result = _PRONOUN_PATTERN.sub(fallback_subject, question, count=1)
+            logger.info(
+                "Query rewrite left pronoun unresolved, applied deterministic "
+                "fallback: %r -> %r", question, result,
+            )
+        else:
+            logger.warning(
+                "Query rewrite left pronoun unresolved and no fallback "
+                "subject found in history: %r", question,
+            )
+
+    if result == question:
+        logger.info("Query rewrite returned unchanged: %r", question)
+    else:
+        logger.info("Query rewrite: %r -> %r", question, result)
+    return result
 
 
 # -------------------------------------------------------------------
@@ -468,6 +542,24 @@ def chat(req: ChatRequest):
         category=req.category,
         in_stock_only=req.in_stock_only,
     )
+
+    # Safety net: a rewrite can occasionally drift (garbled phrasing, an
+    # over-literal pronoun substitution, added verbosity that hurts the
+    # embedding) and return zero matches even though the raw message would
+    # have retrieved fine on its own. Retry once with the original message
+    # before falling back, rather than letting one bad rewrite silently
+    # kill an otherwise-answerable question.
+    if not rows and retrieval_question != req.message:
+        logger.info(
+            "Rewritten query found nothing, retrying with raw message | "
+            "session=%s rewritten=%r raw=%r",
+            session_id, retrieval_question, req.message,
+        )
+        context, rows = retrieve_context(
+            req.message,
+            category=req.category,
+            in_stock_only=req.in_stock_only,
+        )
 
     if not rows:
         def fallback_gen():

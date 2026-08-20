@@ -105,6 +105,102 @@ def _fetch(session: requests.Session, url: str) -> Optional[str]:
     return resp.text
 
 
+def _extract_lab_tests(soup: BeautifulSoup) -> list[str]:
+    """Pulls structured lab-test data out of plain `.tile` blocks on the lab
+    tests page. Unlike product/doctor cards, these have no dedicated class
+    (just `.tile` with inline styles), and the page mixes two shapes:
+
+      - Health packages: `.badge-soft` (parameter count / audience tag) +
+        `h5` name + description `<p>` + price/MRP.
+      - Individual tests: `h6` name + price/MRP only, no badge or
+        description.
+
+    We key off `.badge-soft` to tell the two apart, and require a price
+    element to exist at all (this excludes the `.filter-card` order-summary
+    sidebar, which is a different tile-like block with no price/name to
+    extract and would otherwise pollute the chunk set).
+    """
+    chunks = []
+    for tile in soup.select(".tile"):
+        price_el = tile.select_one(".price")
+        if not price_el:
+            continue  # not a purchasable test/package tile (e.g. order-summary sidebar)
+
+        mrp_el = tile.select_one(".mrp")
+        price = price_el.get_text(strip=True)
+        mrp = mrp_el.get_text(strip=True) if mrp_el else ""
+
+        badge_el = tile.select_one(".badge-soft")
+        if badge_el:
+            # Health package: has a name in h5 and a description paragraph.
+            name_el = tile.select_one("h5")
+            if not name_el:
+                continue
+            name = name_el.get_text(strip=True)
+            badge = badge_el.get_text(strip=True)
+            desc_el = tile.select_one("p")
+            description = desc_el.get_text(strip=True) if desc_el else ""
+
+            sentence = f"Health Package: {name} ({badge})."
+            if description:
+                sentence += f" Includes: {description}"
+            sentence += f" Price: {price}"
+        else:
+            # Individual test: name is in h6, no description.
+            name_el = tile.select_one("h6")
+            if not name_el:
+                continue
+            name = name_el.get_text(strip=True)
+            sentence = f"Lab Test: {name}. Price: {price}"
+
+        if mrp and mrp != price:
+            sentence += f" (MRP {mrp})"
+        sentence += ". Free home sample collection, reports in 24 hours."
+
+        chunks.append(sentence)
+
+    return chunks
+
+
+def _extract_doctors(soup: BeautifulSoup) -> list[str]:
+    """Pulls structured doctor data out of `.tile.doctor-card` blocks (name /
+    specialty / rating / experience) and turns each into one clean,
+    self-contained sentence — same rationale as _extract_products(): a page
+    listing several doctors becomes one diluted paragraph without this, so a
+    query like "name a general physician" has to match a blob describing
+    every specialty at once instead of one focused sentence about Dr. Anita
+    Sharma specifically. One doctor = one chunk fixes that.
+    """
+    chunks = []
+    for card in soup.select(".tile.doctor-card"):
+        name_el = card.select_one("h6")
+        if not name_el:
+            continue
+        name = name_el.get_text(strip=True)
+
+        meta_el = card.select_one(".meta")
+        specialty = meta_el.get_text(strip=True) if meta_el else ""
+
+        rating_el = card.select_one(".rating")
+        rating = rating_el.get_text(strip=True) if rating_el else ""
+
+        exp_el = card.select_one(".exp")
+        experience = exp_el.get_text(strip=True) if exp_el else ""
+
+        sentence = f"Doctor: {name}."
+        if specialty:
+            sentence += f" Specialty: {specialty}."
+        if experience:
+            sentence += f" {experience}."
+        if rating:
+            sentence += f" Rating: {rating}."
+        sentence += " Available for chat, audio, or video consultation."
+
+        chunks.append(sentence)
+
+    return chunks
+
+
 def _extract_products(soup: BeautifulSoup) -> list[str]:
     """Pulls structured product data out of `.tile.product-card` blocks
     (name / composition-or-category / brand / price / MRP / discount /
@@ -155,19 +251,31 @@ def _extract_products(soup: BeautifulSoup) -> list[str]:
 
 
 def _extract_content(html: str, url: str) -> tuple[str, list[str]]:
-    """Returns (title, chunks) for a page: structured per-product chunks
-    (if any product cards are present) plus chunked general page text
-    (intro copy, FAQs, policies, etc.) extracted via trafilatura from the
-    remaining HTML with product cards stripped out, so the general text
-    doesn't just re-duplicate a diluted version of the same product list.
+    """Returns (title, chunks) for a page: structured per-product,
+    per-doctor, and per-lab-test/package chunks (if any such cards are
+    present) plus chunked general page text (intro copy, FAQs, policies,
+    etc.) extracted via trafilatura from the remaining HTML with those
+    cards stripped out, so the general text doesn't just re-duplicate a
+    diluted version of the same product/doctor/test list.
     """
     soup = BeautifulSoup(html, "html.parser")
     title = soup.title.string.strip() if soup.title and soup.title.string else ""
 
     product_chunks = _extract_products(soup)
+    doctor_chunks = _extract_doctors(soup)
+    lab_test_chunks = _extract_lab_tests(soup)
 
     for card in soup.select(".tile.product-card"):
         card.decompose()
+    for card in soup.select(".tile.doctor-card"):
+        card.decompose()
+    # Lab test tiles are plain `.tile` with no dedicated class, so only
+    # decompose the ones we actually extracted from (has a `.price`) —
+    # this leaves the `.filter-card` sidebar and any other `.tile` blocks
+    # without prices untouched for the general-text fallback below.
+    for tile in soup.select(".tile"):
+        if tile.select_one(".price"):
+            tile.decompose()
 
     remaining_html = str(soup)
     general_text = trafilatura.extract(
@@ -182,7 +290,7 @@ def _extract_content(html: str, url: str) -> tuple[str, list[str]]:
 
     general_chunks = _chunk_text(general_text)
 
-    return title, product_chunks + general_chunks
+    return title, product_chunks + doctor_chunks + lab_test_chunks + general_chunks
 
 
 def _extract_links(html: str, base_url: str, domain: str) -> list[str]:
