@@ -960,7 +960,7 @@ _MAX_PDF_BYTES = 20 * 1024 * 1024
 # packaging/label text without producing huge payloads.
 _PDF_RENDER_DPI = int(os.getenv("PDF_RENDER_DPI", "200"))
 
-VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
+VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "qwen/qwen3.6-27b")
 
 _VISION_SYSTEM_PROMPT = """You identify medicine names from photos of packaging, \
 strips, bottles, labels, or scanned prescriptions/product sheets.
