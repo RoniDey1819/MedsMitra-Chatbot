@@ -497,7 +497,7 @@
       const text = (data.text || "").trim();
 
       if (!text) {
-        showStatus("Didn't catch that — try again");
+        showStatus("Didn't catch that - try again");
         setTimeout(() => showStatus(""), 2500);
         return;
       }
@@ -512,7 +512,7 @@
       showStatus("");
     } catch (err) {
       console.error("voice-search: transcription request failed", err);
-      showStatus("Voice search failed — please type instead");
+      showStatus("Voice search failed - please type instead");
       setTimeout(() => showStatus(""), 3000);
     } finally {
       micBtn.disabled = false;
@@ -698,7 +698,7 @@
     } catch (err) {
       console.error("image-analysis: request failed", err);
       botDiv.innerHTML = "";
-      botDiv.textContent = "Document analysis failed — please try again or type the medicine name.";
+      botDiv.textContent = "Document analysis failed - please try again or type the medicine name.";
       showStatus("");
     } finally {
       attachBtn.disabled = false;
