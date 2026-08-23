@@ -337,11 +337,48 @@ def clear_history(session_id: str) -> None:
 
 _PRONOUN_PATTERN = re.compile(r"\b(it|this|that|those|these)\b", re.I)
 
+# Observed in production: for short romanized Bangla/Hindi messages (e.g.
+# "zincovit er dam koto"), the rewrite LLM sometimes ignores the translate
+# instruction entirely and echoes the input back, presumably misreading
+# "already a short standalone English query" as covering romanized text
+# too. When that happens, retrieval embeds raw Bangla/Hindi against an
+# English-only corpus and returns nothing (inventory_matched=0,
+# website_matched=0 — the exact "I couldn't find that information" bug).
+# This marker list lets us detect "the LLM claimed nothing needed
+# translating, but it obviously did" and force a retry with a stronger
+# instruction instead of silently trusting the unchanged result. Not
+# exhaustive — a deterministic safety net, same spirit as the pronoun
+# fallback below.
+_ROMANIZED_MARKERS = re.compile(
+    r"\b("
+    r"dam|daam|koto|kotto|ache|asche|ki|lagbe|paoa|jabe|er|"
+    r"kitna|kitne|hai|chahiye|milega|milegi|keemat|ka|ke"
+    r")\b",
+    re.I,
+)
+
+
+def _looks_romanized_untranslated(original: str, rewritten: str) -> bool:
+    """True if the rewrite came back unchanged but the original contains
+    multiple romanized Bangla/Hindi marker words — a strong signal the LLM
+    skipped translation rather than correctly judging the input as
+    already-English. Requires >=2 hits to avoid false-positiving on English
+    sentences that happen to contain "hai" as a substring of another word
+    or a single ambiguous token like "ki"."""
+    if rewritten.strip().lower() != original.strip().lower():
+        return False
+    hits = _ROMANIZED_MARKERS.findall(original)
+    return len(hits) >= 2
+
 # Matches "Medicine: <Name> (...)" — the exact prefix row_to_text() in
 # load_data.py generates in the retrieval context. We look for this literal
 # label first since it's unambiguous; only fall back to a loose capitalized-
 # word scan (excluding common sentence-starters) if that's absent.
 _MEDICINE_LABEL = re.compile(r"Medicine:\s*([A-Za-z0-9][\w\- ]*?)(?:\s*\(|\.)")
+# Same "Product: <name>." prefix crawl_site.py's _extract_products() emits
+# (see spell_correct.py's _PRODUCT_NAME_PATTERN, which matches this exactly)
+# — used in retrieve_context() to de-dupe repeated product chunks.
+_PRODUCT_NAME_PATTERN = re.compile(r"Product:\s*([A-Za-z0-9][\w\- ]*?)\.")
 _CAPITALIZED_WORD = re.compile(r"\b([A-Z][a-z]{2,}(?:\s[A-Z0-9][a-zA-Z0-9]*)?)\b")
 _COMMON_SENTENCE_STARTERS = {
     "yes", "no", "please", "sure", "sorry", "would", "could", "consult",
@@ -443,6 +480,42 @@ def rewrite_query(question: str, history: list[dict]) -> str:
         logger.exception("Query rewrite failed, falling back to raw question")
         result = question
 
+    # Safety net: the LLM sometimes echoes short romanized Bangla/Hindi
+    # back unchanged instead of translating it (see _looks_romanized_
+    # untranslated docstring). One retry with a blunter, non-optional
+    # instruction — no "return unchanged if already fine" escape hatch —
+    # fixes this in practice without a second round-trip's cost being paid
+    # on every request (only fires when the first pass looks wrong).
+    if _looks_romanized_untranslated(question, result):
+        logger.warning(
+            "Query rewrite looks like it skipped translation, retrying "
+            "with forced-translate prompt: %r", question,
+        )
+        forced_prompt = (
+            f'The message "{question}" is romanized Bangla or Hindi, NOT '
+            "English, even though it uses Latin script. Translate its full "
+            "intent into a short English pharmacy search query (under 8 "
+            "words). Do not return it unchanged. Respond with ONLY the "
+            "translated query."
+        )
+        try:
+            resp = groq_client.chat.completions.create(
+                model=GROQ_MODEL,
+                messages=[{"role": "user", "content": forced_prompt}],
+                temperature=0,
+                max_tokens=60,
+            )
+            retried = (resp.choices[0].message.content or "").strip().strip('"')
+            if retried and retried.lower() != question.lower():
+                logger.info("Forced-translate retry: %r -> %r", question, retried)
+                result = retried
+            else:
+                logger.warning(
+                    "Forced-translate retry also failed to change: %r", question,
+                )
+        except Exception:
+            logger.exception("Forced-translate retry failed for: %r", question)
+
     # If the question had an unresolved pronoun and the rewrite didn't
     # actually change anything (LLM failure mode observed in production:
     # it silently echoed the input back instead of substituting), try a
@@ -527,12 +600,48 @@ def retrieve_context(
             "Website content lookup failed for question=%r", question, exc_info=True
         )
 
+    # De-dupe website chunks describing the same product. crawl_site.py can
+    # legitimately emit multiple "Product: <name>." chunks for one product
+    # (e.g. it appears on both a listing page and a cart/checkout page with
+    # a different price on each). Without this, both chunks clear the
+    # similarity threshold and get merged into context together, and
+    # nothing tells the LLM which price is authoritative — it picks
+    # whichever one it likes per turn, producing a different price on
+    # every request for the same question. Keep only the highest-
+    # similarity chunk per distinct product name; unnamed/non-product
+    # website chunks (store hours, policies, etc.) are left untouched.
+    seen_products: dict[str, float] = {}
+    deduped_website_rows = []
+    for r in website_rows:
+        match = _PRODUCT_NAME_PATTERN.search(r["content"])
+        if not match:
+            deduped_website_rows.append(r)
+            continue
+        product_key = match.group(1).strip().lower()
+        if product_key in seen_products and seen_products[product_key] >= r["similarity"]:
+            continue  # a better-scoring chunk for this product was already kept
+        seen_products[product_key] = r["similarity"]
+        deduped_website_rows = [
+            row for row in deduped_website_rows
+            if not (
+                (m := _PRODUCT_NAME_PATTERN.search(row["content"]))
+                and m.group(1).strip().lower() == product_key
+            )
+        ]
+        deduped_website_rows.append(r)
+
+    if len(deduped_website_rows) != len(website_rows):
+        logger.info(
+            "Retrieval: deduped %d website chunk(s) down to %d for query=%r",
+            len(website_rows), len(deduped_website_rows), question,
+        )
+
     merged = [
         {"source": "inventory", "similarity": r["similarity"], "content": r["content"], "url": None}
         for r in medicine_rows
     ] + [
         {"source": "website", "similarity": r["similarity"], "content": r["content"], "url": r.get("url")}
-        for r in website_rows
+        for r in deduped_website_rows
     ]
     merged.sort(key=lambda r: r["similarity"], reverse=True)
 
