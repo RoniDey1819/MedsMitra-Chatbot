@@ -900,7 +900,8 @@ async def transcribe(audio: UploadFile = File(...)):
     chat traffic), so we let Whisper auto-detect per request rather than
     biasing toward one language and hurting the others.
     """
-    if audio.content_type not in _ALLOWED_AUDIO_CONTENT_TYPES:
+    content_type = (audio.content_type or "").split(";")[0].strip().lower()
+    if content_type not in _ALLOWED_AUDIO_CONTENT_TYPES:
         logger.warning("Rejected /transcribe upload with content_type=%r", audio.content_type)
         raise HTTPException(
             status_code=400,
