@@ -11,7 +11,7 @@
  *   </script>
  *   <script src="chatbot-widget.js"></script>
  *
- * That's it — a floating chat bubble appears in the bottom-right corner.
+ * That's it - a floating chat bubble appears in the bottom-right corner.
  * Set MED_CHATBOT_ICON_URL to use a custom image/gif instead of the default
  * 💬 emoji; when a custom icon is set, the circular background is removed
  * so only the icon graphic shows (no colored disc behind it). A small
@@ -34,7 +34,7 @@
   const GREETING_DISMISSED_KEY = "medsmitra_greeting_dismissed";
 
   // ---------------------------------------------------------------
-  // Session id — persisted in localStorage so a page reload resumes
+  // Session id - persisted in localStorage so a page reload resumes
   // the same conversation (backend keeps history in Redis for
   // SESSION_TTL_SECONDS after the last message).
   // ---------------------------------------------------------------
@@ -158,7 +158,7 @@
   }
   document.body.appendChild(bubble);
 
-  // Greeting speech bubble — dismissible, shown once per browser.
+  // Greeting speech bubble - dismissible, shown once per browser.
   let greetingEl = null;
   if (SHOW_GREETING && !localStorage.getItem(GREETING_DISMISSED_KEY)) {
     greetingEl = document.createElement("div");
@@ -171,10 +171,12 @@
       localStorage.setItem(GREETING_DISMISSED_KEY, "1");
     };
 
-    greetingEl.querySelector("#mc-greeting-close").addEventListener("click", (e) => {
-      e.stopPropagation();
-      dismissGreeting();
-    });
+    greetingEl
+      .querySelector("#mc-greeting-close")
+      .addEventListener("click", (e) => {
+        e.stopPropagation();
+        dismissGreeting();
+      });
     greetingEl.addEventListener("click", () => {
       dismissGreeting();
       bubble.click();
@@ -226,7 +228,8 @@
   function showTyping() {
     const div = document.createElement("div");
     div.className = "mc-msg mc-bot";
-    div.innerHTML = '<span class="mc-dot"></span><span class="mc-dot"></span><span class="mc-dot"></span>';
+    div.innerHTML =
+      '<span class="mc-dot"></span><span class="mc-dot"></span><span class="mc-dot"></span>';
     messagesEl.appendChild(div);
     messagesEl.scrollTop = messagesEl.scrollHeight;
     return div;
@@ -251,7 +254,7 @@
   }
 
   // ---------------------------------------------------------------
-  // Send message — SSE streaming with reconnect/retry handling
+  // Send message - SSE streaming with reconnect/retry handling
   // ---------------------------------------------------------------
 
   async function sendMessage() {
@@ -274,7 +277,8 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, session_id: sessionId }),
       });
-      if (!res.ok || !res.body) throw new Error("Request failed: " + res.status);
+      if (!res.ok || !res.body)
+        throw new Error("Request failed: " + res.status);
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -286,7 +290,7 @@
         buffer += decoder.decode(value, { stream: true });
 
         const parts = buffer.split("\n\n");
-        buffer = parts.pop(); // last part may be incomplete — keep for next chunk
+        buffer = parts.pop(); // last part may be incomplete - keep for next chunk
 
         for (const part of parts) {
           const line = part.trim();
@@ -356,11 +360,17 @@
     try {
       await fetch(`${CHAT_URL}/${sessionId}`, { method: "DELETE" });
     } catch (err) {
-      console.error("Failed to clear session on server (resetting locally anyway):", err);
+      console.error(
+        "Failed to clear session on server (resetting locally anyway):",
+        err,
+      );
     }
     sessionId = newSessionId();
     messagesEl.innerHTML = "";
-    addMessage("Conversation cleared. Ask me about medicine availability, dosage, or alternatives.", "bot");
+    addMessage(
+      "Conversation cleared. Ask me about medicine availability, dosage, or alternatives.",
+      "bot",
+    );
     clearBtn.disabled = false;
   }
 
@@ -381,20 +391,29 @@
         historyRestored = true;
         await restoreHistory();
         if (messagesEl.children.length === 0) {
-          addMessage("Hi! Ask me about medicine availability, dosage, or alternatives.", "bot");
+          addMessage(
+            "Hi! Ask me about medicine availability, dosage, or alternatives.",
+            "bot",
+          );
         }
         inputEl.focus();
       }
     }
   });
 
-  win.querySelector("#mc-close").addEventListener("click", () => (win.style.display = "none"));
+  win
+    .querySelector("#mc-close")
+    .addEventListener("click", () => (win.style.display = "none"));
   clearBtn.addEventListener("click", clearConversation);
   sendBtn.addEventListener("click", sendMessage);
   inputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter") sendMessage();
   });
 
-  window.addEventListener("offline", () => showStatus("You're offline — messages won't send until you're back online."));
+  window.addEventListener("offline", () =>
+    showStatus(
+      "You're offline - messages won't send until you're back online.",
+    ),
+  );
   window.addEventListener("online", () => showStatus(""));
 })();

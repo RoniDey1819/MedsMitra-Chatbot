@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1
 
 # ---------------------------------------------------------------------------
-# MedsMitra Chatbot — backend container
+# MedsMitra Chatbot - backend container
 #
 # This image runs only backend/app.py (the FastAPI RAG service). The widget
 # (widget/chatbot-widget.js) and the demo site (widget/MedsMitra/) are static
 # files meant to be hosted separately (e.g. Netlify, Vercel, GitHub Pages, or
-# your existing pharmacy website) — they are not part of this image.
+# your existing pharmacy website) - they are not part of this image.
 #
 # Build (run from the repository root, where this Dockerfile lives):
 #   docker build -t medsmitra-backend .
@@ -16,7 +16,7 @@
 #
 # Embeddings are computed by Hugging Face's hosted Inference API (see
 # backend/hf_embedder.py) rather than a local model, so this image has no
-# large ML dependencies to download or bake in — it builds fast and stays
+# large ML dependencies to download or bake in - it builds fast and stays
 # small, which matters most on resource-limited hosts like Render's free
 # tier where local CPU-bound embedding was previously the bottleneck.
 # ---------------------------------------------------------------------------
@@ -43,7 +43,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # requirements.txt changes (keeps rebuilds fast during development).
 #
 # NOTE: as of the HF-Inference-API embedding change, requirements.txt no
-# longer includes sentence-transformers/torch — embeddings are computed by
+# longer includes sentence-transformers/torch - embeddings are computed by
 # a hosted HF endpoint instead of locally, so this image stays small and
 # builds fast. If you re-enable local embeddings, see requirements-local.txt
 # and re-add the torch pre-download step that used to live here.
@@ -68,7 +68,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
 # Single worker: app.py loads the embedding model and, if enabled, schedules
-# a background crawl job in-process — multiple workers would duplicate both.
+# a background crawl job in-process - multiple workers would duplicate both.
 # Scale horizontally with multiple containers behind a load balancer instead
 # of multiple uvicorn workers in one container.
 #

@@ -26,7 +26,7 @@ alter table medicines add column if not exists category text;
 alter table medicines add column if not exists in_stock boolean;
 
 comment on column medicines.category is
-    'Coarse category derived from Use_Case, e.g. "Fever" — used for metadata filtering.';
+    'Coarse category derived from Use_Case, e.g. "Fever" - used for metadata filtering.';
 comment on column medicines.in_stock is
     'Boolean form of the Stock column (Yes/No), used for metadata filtering.';
 
@@ -93,7 +93,7 @@ $$;
 
 -- 5. Table holding crawled content from the pharmacy's own website (store
 -- hours, location, services, policies, etc.), populated by crawl_site.py.
--- One row per chunk of a page — long pages are split into several rows.
+-- One row per chunk of a page - long pages are split into several rows.
 create table if not exists website_content (
     id           bigserial primary key,
     url          text not null,

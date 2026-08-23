@@ -4,11 +4,11 @@ MedsMitra is an AI-powered medicine assistant for online pharmacy websites. It c
 
 The repository has three parts:
 
-| Folder | What it is |
-| --- | --- |
-| `backend/` | A FastAPI service that embeds a medicine catalog, performs vector similarity search in Supabase (pgvector), and streams answers from an LLM |
-| `widget/MedsMitra/` | A full static demo pharmacy website (HTML/CSS/JS, Bootstrap 5) used to showcase the widget in context |
-| `widget/chatbot-widget.js` | The embeddable chat widget itself — a single script that can be dropped into any existing website |
+| Folder                     | What it is                                                                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/`                 | A FastAPI service that embeds a medicine catalog, performs vector similarity search in Supabase (pgvector), and streams answers from an LLM |
+| `widget/MedsMitra/`        | A full static demo pharmacy website (HTML/CSS/JS, Bootstrap 5) used to showcase the widget in context                                       |
+| `widget/chatbot-widget.js` | The embeddable chat widget itself - a single script that can be dropped into any existing website                                           |
 
 ---
 
@@ -28,6 +28,7 @@ This keeps answers grounded in real stock and dosage data rather than invented i
 ## Tech stack
 
 **Backend**
+
 - FastAPI + Uvicorn
 - Supabase (Postgres + pgvector) for vector storage and similarity search
 - `sentence-transformers` (`all-MiniLM-L6-v2`) for local embeddings
@@ -36,6 +37,7 @@ This keeps answers grounded in real stock and dosage data rather than invented i
 - `trafilatura` / `beautifulsoup4` for optional site crawling (`crawl_site.py`)
 
 **Widget & demo site**
+
 - Vanilla JavaScript (no build step, no framework dependency)
 - Bootstrap 5.3 for the demo site layout
 - Font Awesome 6.5 icons
@@ -93,7 +95,7 @@ Then add the widget to any HTML page:
 <script src="/js/chatbot-widget.js"></script>
 ```
 
-For full setup details — including creating a Groq API key, configuring Supabase, environment variables, and deploying to Render — see the [backend setup guide](README.setup-guide.md).
+For full setup details - including creating a Groq API key, configuring Supabase, environment variables, and deploying to Render - see the [backend setup guide](README.setup-guide.md).
 
 For the demo pharmacy site, open [`widget/MedsMitra/index.html`](widget/MedsMitra) directly in a browser, or see [`widget/MedsMitra/README.md`](widget/MedsMitra/README.md) for a page-by-page breakdown and design system notes.
 
@@ -114,7 +116,7 @@ Rows are upserted by `Medicine_ID`, so existing entries are updated in place and
 ## Notes before going live
 
 - Restrict CORS to a real domain via the `ALLOWED_ORIGIN` environment variable.
-- Never expose the Supabase `service_role` key in frontend code — it is used server-side only.
+- Never expose the Supabase `service_role` key in frontend code - it is used server-side only.
 - Consider adding rate limiting so a single visitor can't exhaust API credits.
 - The demo site in `widget/MedsMitra/` is a static frontend only; its cart, sign-in, and checkout flows are simulated in the browser and do not persist data or call a real backend.
 
@@ -122,4 +124,4 @@ Rows are upserted by `Medicine_ID`, so existing entries are updated in place and
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

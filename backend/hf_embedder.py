@@ -94,7 +94,7 @@ class HFEmbedder:
                     result = [self._mean_pool_if_needed(v) for v in data]
                     return _EncodedResult(result[0]) if single_input else result
 
-                # Model is loading on HF's side — wait_for_model should handle
+                # Model is loading on HF's side - wait_for_model should handle
                 # this, but fall back to a short sleep + retry just in case.
                 if resp.status_code == 503:
                     logger.warning(
@@ -120,7 +120,7 @@ class HFEmbedder:
     @staticmethod
     def _mean_pool_if_needed(vector):
         # Expected: List[float] (one vector per sentence).
-        # Some models return List[List[float]] (per-token) instead — mean-pool.
+        # Some models return List[List[float]] (per-token) instead - mean-pool.
         if vector and isinstance(vector[0], list):
             length = len(vector)
             dim = len(vector[0])

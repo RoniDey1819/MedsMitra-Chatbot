@@ -27,15 +27,15 @@ This is a redesign of the original student project, focused on a consistent desi
 | Blog              | `blog.html`            | Health articles with categories & newsletter signup                             |
 | Contact Us        | `contact.html`         | Contact form, quick FAQs, support channels                                      |
 | Sign In / Profile | `profile.html`         | OTP-based sign in, social sign-in options                                       |
-| Cart              | `addtocart.html`       | Cart review, coupon, order summary (new — was linked but missing)               |
+| Cart              | `addtocart.html`       | Cart review, coupon, order summary (new - was linked but missing)               |
 
 ---
 
 ## 🎨 Design system
 
-- **Palette** — clinical teal (`#0E7C86`) for trust, warm coral (`#FF6B4A`) for calls to action, deep ink (`#0F2A2E`) for text, warm sand background.
-- **Type** — Fraunces (display headings), Inter (body copy), IBM Plex Mono (prices, dosages, stats) — a nod to prescription labels and lab reports.
-- **Signature element** — the `.rx-tag`, a dashed-border "prescription label" chip used for discounts, dosage info and category badges across the site.
+- **Palette** - clinical teal (`#0E7C86`) for trust, warm coral (`#FF6B4A`) for calls to action, deep ink (`#0F2A2E`) for text, warm sand background.
+- **Type** - Fraunces (display headings), Inter (body copy), IBM Plex Mono (prices, dosages, stats) - a nod to prescription labels and lab reports.
+- **Signature element** - the `.rx-tag`, a dashed-border "prescription label" chip used for discounts, dosage info and category badges across the site.
 - All shared styles live in `css/style.css`; shared interactivity (cart badge, toasts, FAQ accordion, back-to-top, demo form submissions) lives in `js/app.js`.
 
 ---
@@ -43,7 +43,7 @@ This is a redesign of the original student project, focused on a consistent desi
 ## 🛠️ Tech Stack
 
 - HTML5, CSS3 (custom design system, no framework overrides needed beyond Bootstrap's grid)
-- Bootstrap 5.3 (layout/grid/utilities only — components are custom-styled)
+- Bootstrap 5.3 (layout/grid/utilities only - components are custom-styled)
 - Font Awesome 6.5 icons
 - Vanilla JavaScript (no build step, no dependencies)
 
@@ -69,7 +69,7 @@ This is a redesign of the original student project, focused on a consistent desi
    ┗ 📄 app.js
 ```
 
-Product, doctor and blog images are loaded from `picsum.photos` placeholders (seeded, so each stays consistent between reloads) rather than a local `images/` folder — swap these `<img src>` values for real product photography before going to production.
+Product, doctor and blog images are loaded from `picsum.photos` placeholders (seeded, so each stays consistent between reloads) rather than a local `images/` folder - swap these `<img src>` values for real product photography before going to production.
 
 ---
 
@@ -77,7 +77,7 @@ Product, doctor and blog images are loaded from `picsum.photos` placeholders (se
 
 1. Open the project folder in VS Code (or any editor).
 2. Right-click `index.html` → **Open with Live Server**, or just double-click it to open in your browser.
-3. No build step, no dependencies to install — it's a static site.
+3. No build step, no dependencies to install - it's a static site.
 
 > ⚠️ This is a **static frontend-only demo**. Forms, "Add to cart", checkout and sign-in are simulated in the browser (see `js/app.js`) and don't persist data or call a real backend.
 

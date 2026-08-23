@@ -138,14 +138,14 @@ def upsert_rows(rows: list[dict], texts: list[str], embeddings: list[list[float]
 def main():
     rows = load_rows()
     if not rows:
-        logger.warning("No rows found in medicines.csv — nothing to load.")
+        logger.warning("No rows found in medicines.csv - nothing to load.")
         return
 
     texts = [row_to_text(r) for r in rows]
     embeddings = embed_texts(texts)
     upsert_rows(rows, texts, embeddings)
 
-    logger.info("Done — upserted %d medicines into Supabase.", len(rows))
+    logger.info("Done - upserted %d medicines into Supabase.", len(rows))
 
 
 if __name__ == "__main__":

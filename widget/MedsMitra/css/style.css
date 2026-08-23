@@ -1,8 +1,8 @@
 /* =========================================================================
-   MedsMitra — Design System
+   MedsMitra - Design System
    Palette:  Clinical teal (trust) + warm coral (action) + navy ink (text)
    Type:     Fraunces (display, editorial warmth) / Inter (body) / IBM Plex Mono (data, dosages, prices)
-   Signature: "prescription label" ticket-style tags — dashed edge, mono type —
+   Signature: "prescription label" ticket-style tags - dashed edge, mono type -
               used for discounts, dosage chips and category pills throughout.
    ========================================================================= */
 
@@ -22,10 +22,12 @@
   --success: #2fa84f;
   --warning: #e8a93b;
 
-  --font-display: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display:
+    "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-body:
     "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:
+    "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   --radius: 14px;
   --radius-sm: 8px;
@@ -385,7 +387,7 @@ a {
 }
 
 /* =========================================================================
-   Prescription-label tag — signature element
+   Prescription-label tag - signature element
    Dashed ticket edge + mono type, used for discounts / dosage / badges
    ========================================================================= */
 .rx-tag {
@@ -416,7 +418,7 @@ a {
 }
 
 /* =========================================================================
-   Cards — generic
+   Cards - generic
    ========================================================================= */
 .card {
   border: 1px solid var(--line);

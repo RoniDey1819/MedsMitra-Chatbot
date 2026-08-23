@@ -37,16 +37,16 @@ from rapidfuzz import fuzz
 
 logger = logging.getLogger("medsmitra.spell_correct")
 
-# Below this score, we don't think it's a match at all — leave text alone.
+# Below this score, we don't think it's a match at all - leave text alone.
 MIN_MATCH_SCORE = 62
 # Above this score, treat it as basically certain (typo, not a different
-# medicine) — correct silently without asking for confirmation.
+# medicine) - correct silently without asking for confirmation.
 AUTO_CORRECT_SCORE = 90
 # At or above MIN_MATCH_SCORE but below AUTO_CORRECT_SCORE: correct AND
 # flag should_confirm=True so the caller can append a "did you mean?" note.
 
 # Plain edit-distance (fuzz.ratio) can't reliably tell apart phonetically
-# different drug names — e.g. "azitromycin" scores HIGHER against "Crocin"
+# different drug names - e.g. "azitromycin" scores HIGHER against "Crocin"
 # than against the phonetically obvious "Azithral" using ratio alone, since
 # both share several letters in any order. Typos in drug names typically
 # preserve the start of the word even when the middle/end drifts (a user
@@ -80,7 +80,7 @@ def _best_match(candidate: str, names: list[str]) -> Optional[tuple[str, float]]
 _WORD_PATTERN = re.compile(r"[A-Za-z]+")
 
 # Matches the exact "Product: <name>." prefix that crawl_site.py's
-# _extract_products() generates for each product card — see that file's
+# _extract_products() generates for each product card - see that file's
 # sentence-building logic. This is how brand names that only exist on the
 # live website (not in medicines.csv) still make it into the correction
 # cache, e.g. "Crocin Advance" or "Zincovit" as sold/priced on-site even
@@ -114,7 +114,7 @@ class SpellCorrector:
         sources because a single 'medicine_name' column is not enough:
         users search by brand name ("Crocin", "Zincovit") which often only
         appears in the medicines table's 'alternative' column (comma-
-        separated brand/alternative names — see load_data.py's schema), or
+        separated brand/alternative names - see load_data.py's schema), or
         only in website_content (crawled product listing pages) if it's not
         in the medicines table at all. Safe to call repeatedly; failures are
         logged and the previous cache is kept."""
@@ -132,7 +132,7 @@ class SpellCorrector:
                     if not raw:
                         continue
                     # 'alternative' can be a comma-separated list, e.g.
-                    # "Crocin, Dolo" — split it into individual names.
+                    # "Crocin, Dolo" - split it into individual names.
                     for part in raw.split(","):
                         part = part.strip()
                         if part:
@@ -152,7 +152,7 @@ class SpellCorrector:
                 if match:
                     names.add(match.group(1).strip())
         except Exception:
-            # website_content may not exist yet, or the crawl hasn't run —
+            # website_content may not exist yet, or the crawl hasn't run -
             # this source is optional, so don't let it block the medicines
             # table results above.
             logger.warning("Spell-correction refresh: website_content query skipped/failed.", exc_info=True)
@@ -163,7 +163,7 @@ class SpellCorrector:
                 self._last_refresh = time.time()
             logger.info("Spell-correction cache refreshed: %d known names (medicines + website).", len(names))
         else:
-            logger.warning("Spell-correction refresh returned no names at all — keeping old cache.")
+            logger.warning("Spell-correction refresh returned no names at all - keeping old cache.")
 
     def _maybe_refresh(self) -> None:
         if time.time() - self._last_refresh > self._refresh_interval:
@@ -174,7 +174,7 @@ class SpellCorrector:
             return list(self._names)
 
     def correct(self, text: str) -> CorrectionResult:
-        """Best-effort fuzzy correction. Never raises — on any failure or
+        """Best-effort fuzzy correction. Never raises - on any failure or
         empty cache, returns the text unchanged."""
         self._maybe_refresh()
         names = self._known_names()
@@ -239,11 +239,11 @@ class SpellCorrector:
                         corrected_text=corrected_text,
                         matched_name=matched_name,
                         confidence=score / 100,
-                        should_confirm=True,  # always confirm — this is a lossy guess
+                        should_confirm=True,  # always confirm - this is a lossy guess
                         original_text=text,
                     )
 
         except Exception:
-            logger.exception("Spell correction failed for text=%r — returning unchanged.", text)
+            logger.exception("Spell correction failed for text=%r - returning unchanged.", text)
 
         return CorrectionResult(corrected_text=text, original_text=text)

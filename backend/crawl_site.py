@@ -4,8 +4,8 @@ seed URL), extracts readable text, chunks it, embeds it locally, and
 upserts it into the Supabase `website_content` table (see
 supabase_setup.sql for the schema).
 
-This is what lets the chatbot answer general questions — store hours,
-location, services, return policy, etc. — using content that gets merged
+This is what lets the chatbot answer general questions - store hours,
+location, services, return policy, etc. - using content that gets merged
 with medicine search results in app.py's retrieve_context().
 
 Standalone run (one-time or manual refresh):
@@ -165,7 +165,7 @@ def _extract_lab_tests(soup: BeautifulSoup) -> list[str]:
 def _extract_doctors(soup: BeautifulSoup) -> list[str]:
     """Pulls structured doctor data out of `.tile.doctor-card` blocks (name /
     specialty / rating / experience) and turns each into one clean,
-    self-contained sentence — same rationale as _extract_products(): a page
+    self-contained sentence - same rationale as _extract_products(): a page
     listing several doctors becomes one diluted paragraph without this, so a
     query like "name a general physician" has to match a blob describing
     every specialty at once instead of one focused sentence about Dr. Anita
@@ -208,7 +208,7 @@ def _extract_products(soup: BeautifulSoup) -> list[str]:
 
     This matters because without it, a page listing 12+ products becomes a
     single diluted paragraph mixing every product's name and price
-    together — a query like "price of azithral" then has to match against
+    together - a query like "price of azithral" then has to match against
     a blob about 12 unrelated drugs instead of one focused sentence about
     Azithral, which hurts retrieval and invites the model to mix up prices
     between products. One product = one chunk fixes both problems.
@@ -270,7 +270,7 @@ def _extract_content(html: str, url: str) -> tuple[str, list[str]]:
     for card in soup.select(".tile.doctor-card"):
         card.decompose()
     # Lab test tiles are plain `.tile` with no dedicated class, so only
-    # decompose the ones we actually extracted from (has a `.price`) —
+    # decompose the ones we actually extracted from (has a `.price`) -
     # this leaves the `.filter-card` sidebar and any other `.tile` blocks
     # without prices untouched for the general-text fallback below.
     for tile in soup.select(".tile"):
@@ -313,7 +313,7 @@ def _crawl(seed_url: str) -> dict[str, tuple[str, list[str]]]:
     try:
         robots.read()
     except Exception:
-        logger.warning("Could not read robots.txt for %s — proceeding without it.", domain)
+        logger.warning("Could not read robots.txt for %s - proceeding without it.", domain)
 
     session = requests.Session()
     session.headers.update({"User-Agent": CRAWL_USER_AGENT})
@@ -415,7 +415,7 @@ def _upsert_records(
         execute_values(cur, insert_sql, values, page_size=DB_PAGE_SIZE)
 
         # Anything not touched by this run (page removed, moved, or no
-        # longer reachable) is now stale — clean it up.
+        # longer reachable) is now stale - clean it up.
         cur.execute("delete from website_content where crawled_at < %s", (crawl_start,))
         deleted = cur.rowcount
         if deleted:
@@ -439,7 +439,7 @@ def run_crawl(embed_model: Optional[SentenceTransformer] = None) -> None:
     a second copy of sentence-transformers when called from a scheduler.
     """
     if not WEBSITE_URL:
-        logger.warning("WEBSITE_URL is not set — skipping website crawl.")
+        logger.warning("WEBSITE_URL is not set - skipping website crawl.")
         return
     if not DATABASE_URL:
         raise RuntimeError("DATABASE_URL is not set. Add your Supabase connection string to .env")
@@ -452,7 +452,7 @@ def run_crawl(embed_model: Optional[SentenceTransformer] = None) -> None:
 
     pages = _crawl(WEBSITE_URL)
     if not pages:
-        logger.warning("Crawl found no pages — nothing to update.")
+        logger.warning("Crawl found no pages - nothing to update.")
         return
 
     records: list[tuple[str, str, int, str]] = []
@@ -479,7 +479,7 @@ def run_crawl(embed_model: Optional[SentenceTransformer] = None) -> None:
     embeddings = [e.tolist() for e in raw_embeddings]
 
     _upsert_records(records, embeddings, list(pages.keys()), crawl_start)
-    logger.info("Website crawl complete — %d chunks from %d pages upserted.", len(records), len(pages))
+    logger.info("Website crawl complete - %d chunks from %d pages upserted.", len(records), len(pages))
 
 
 if __name__ == "__main__":
