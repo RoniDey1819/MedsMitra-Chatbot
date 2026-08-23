@@ -352,7 +352,7 @@ _PRONOUN_PATTERN = re.compile(r"\b(it|this|that|those|these)\b", re.I)
 _ROMANIZED_MARKERS = re.compile(
     r"\b("
     r"dam|daam|koto|kotto|ache|asche|ki|lagbe|paoa|jabe|er|"
-    r"kitna|kitne|hai|chahiye|milega|milegi|keemat|ka|ke"
+    r"kitna|kitne|hai|chahiye|milega|milegi|keemat|ka|ke|kya"
     r")\b",
     re.I,
 )
@@ -369,6 +369,63 @@ def _looks_romanized_untranslated(original: str, rewritten: str) -> bool:
         return False
     hits = _ROMANIZED_MARKERS.findall(original)
     return len(hits) >= 2
+
+
+_WORD_PATTERN = re.compile(r"[A-Za-z]+")
+
+# Deterministic glossary fallback for _looks_romanized_untranslated: maps
+# each recognized romanized filler/grammar word to what it signals, so we
+# can build a plain English query without another LLM call. A second LLM
+# call was tried first (a "forced translate" retry) and it didn't help in
+# production — at temperature=0 a near-identical prompt tends to collapse
+# to the same completion, and nothing in a text instruction actually
+# prevents the model from returning the input unchanged again if it
+# decides to. Anything not in this glossary is assumed to be the medicine/
+# product name itself and is preserved as-is (e.g. "Zincovit", "Crocin
+# Advance").
+_PRICE_WORDS = {"dam", "daam", "koto", "kotto", "keemat", "kitna", "kitne"}
+_AVAILABILITY_WORDS = {"ache", "asche", "milega", "milegi", "paoa", "jabe", "hai"}
+_NEED_WORDS = {"lagbe", "chahiye"}
+_DROP_WORDS = {"ki", "er", "ka", "ke", "kya"}  # possessive/question particles, no English equivalent needed
+
+
+def _translate_romanized_glossary(text: str) -> Optional[str]:
+    """Best-effort deterministic translation for short romanized Bangla/
+    Hindi pharmacy queries, used only as a fallback when the LLM rewrite
+    fails to translate (see rewrite_query). Strips recognized grammar/
+    filler words, classifies the remaining intent as price/availability/
+    need, and reassembles a plain English query with the leftover words
+    (the medicine name) preserved verbatim. Returns None if no product
+    name survives the strip (nothing usable to search on) or no intent
+    word was recognized."""
+    words = _WORD_PATTERN.findall(text)
+    if not words:
+        return None
+
+    intent = None
+    name_words = []
+    for word in words:
+        lw = word.lower()
+        if lw in _PRICE_WORDS:
+            intent = intent or "price"
+        elif lw in _AVAILABILITY_WORDS:
+            intent = intent or "availability"
+        elif lw in _NEED_WORDS:
+            intent = intent or "need"
+        elif lw in _DROP_WORDS:
+            continue
+        else:
+            name_words.append(word)
+
+    name = " ".join(name_words).strip()
+    if not name or not intent:
+        return None
+
+    if intent == "price":
+        return f"price of {name}"
+    if intent == "availability":
+        return f"is {name} available"
+    return f"need {name}"  # intent == "need"
 
 # Matches "Medicine: <Name> (...)" — the exact prefix row_to_text() in
 # load_data.py generates in the retrieval context. We look for this literal
@@ -482,39 +539,26 @@ def rewrite_query(question: str, history: list[dict]) -> str:
 
     # Safety net: the LLM sometimes echoes short romanized Bangla/Hindi
     # back unchanged instead of translating it (see _looks_romanized_
-    # untranslated docstring). One retry with a blunter, non-optional
-    # instruction — no "return unchanged if already fine" escape hatch —
-    # fixes this in practice without a second round-trip's cost being paid
-    # on every request (only fires when the first pass looks wrong).
+    # untranslated docstring). Retrying with another LLM call turned out
+    # not to help in practice — at temperature=0 a near-identical prompt
+    # tends to collapse to the same completion, and nothing in a text
+    # instruction actually prevents the model from returning the input
+    # unchanged again if it decides to. So instead of a second LLM
+    # round-trip, do a deterministic glossary-based translation here: no
+    # LLM call, so it can't fail the same way twice.
     if _looks_romanized_untranslated(question, result):
-        logger.warning(
-            "Query rewrite looks like it skipped translation, retrying "
-            "with forced-translate prompt: %r", question,
-        )
-        forced_prompt = (
-            f'The message "{question}" is romanized Bangla or Hindi, NOT '
-            "English, even though it uses Latin script. Translate its full "
-            "intent into a short English pharmacy search query (under 8 "
-            "words). Do not return it unchanged. Respond with ONLY the "
-            "translated query."
-        )
-        try:
-            resp = groq_client.chat.completions.create(
-                model=GROQ_MODEL,
-                messages=[{"role": "user", "content": forced_prompt}],
-                temperature=0,
-                max_tokens=60,
+        glossary_translation = _translate_romanized_glossary(question)
+        if glossary_translation:
+            logger.info(
+                "Query rewrite skipped translation, applied deterministic "
+                "glossary fallback: %r -> %r", question, glossary_translation,
             )
-            retried = (resp.choices[0].message.content or "").strip().strip('"')
-            if retried and retried.lower() != question.lower():
-                logger.info("Forced-translate retry: %r -> %r", question, retried)
-                result = retried
-            else:
-                logger.warning(
-                    "Forced-translate retry also failed to change: %r", question,
-                )
-        except Exception:
-            logger.exception("Forced-translate retry failed for: %r", question)
+            result = glossary_translation
+        else:
+            logger.warning(
+                "Query rewrite skipped translation and glossary fallback "
+                "found nothing to translate: %r", question,
+            )
 
     # If the question had an unresolved pronoun and the rewrite didn't
     # actually change anything (LLM failure mode observed in production:
@@ -559,6 +603,18 @@ def retrieve_context(
     except Exception:
         logger.exception("Embedding failed for question=%r", question)
         raise HTTPException(status_code=500, detail="Failed to process your question.")
+
+    # TEMPORARY DEBUG: log the live query embedding's dimensionality and L2
+    # norm so we can compare against the stored medicines-table embeddings
+    # (checked directly in Supabase: norm ~1.0, 384 dims, confirmed sane).
+    # If this norm is wildly different (near-zero, huge, or NaN/inf), or the
+    # dimension isn't 384, that's the bug. Remove this block once resolved.
+    _debug_norm = sum(x * x for x in raw_embedding) ** 0.5
+    logger.info(
+        "DEBUG live query embedding | question=%r dims=%d norm=%.6f "
+        "first5=%s",
+        question, len(raw_embedding), _debug_norm, raw_embedding[:5],
+    )
 
     query_embedding = "[" + ",".join(str(x) for x in raw_embedding) + "]"
 
