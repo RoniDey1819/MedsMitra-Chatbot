@@ -10,6 +10,7 @@ requests==2.32.3
 beautifulsoup4==4.12.3
 trafilatura==1.12.2
 apscheduler==3.10.4
+rapidfuzz==3.10.1
 
 # NOT required by app.py (which now calls the Hugging Face Inference API for
 # embeddings via hf_embedder.py). Only needed if you run load_data.py or

@@ -27,6 +27,14 @@ from typing import List, Union
 
 import requests
 
+from pathlib import Path
+from dotenv import load_dotenv
+
+ENV_FILE = Path(__file__).resolve().parent / ".env"
+load_dotenv(ENV_FILE)
+
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+
 logger = logging.getLogger("medsmitra.hf_embedder")
 
 HF_API_TOKEN = os.getenv("HF_API_TOKEN")
