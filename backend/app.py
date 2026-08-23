@@ -960,7 +960,7 @@ _MAX_PDF_BYTES = 20 * 1024 * 1024
 # packaging/label text without producing huge payloads.
 _PDF_RENDER_DPI = int(os.getenv("PDF_RENDER_DPI", "200"))
 
-VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "qwen/qwen3.6-27b")
+VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
 
 _VISION_SYSTEM_PROMPT = """You identify medicine names from photos of packaging, \
 strips, bottles, labels, or scanned prescriptions/product sheets.
@@ -1017,6 +1017,10 @@ def _extract_medicine_name(image_bytes: bytes, mime_type: str) -> str:
             ],
             temperature=0,
             max_tokens=128,
+            # See _extract_prescription_items: suppress <think> chain-of-
+            # thought on reasoning-capable Groq models so it never leaks
+            # into the returned medicine name.
+            extra_body={"reasoning_format": "hidden"},
         )
     except Exception:
         logger.exception("Vision model call failed for image analysis")
@@ -1025,7 +1029,12 @@ def _extract_medicine_name(image_bytes: bytes, mime_type: str) -> str:
             detail="Image analysis failed. Please try again or type the medicine name.",
         )
 
-    return (response.choices[0].message.content or "").strip()
+    raw_name = (response.choices[0].message.content or "").strip()
+    # Belt-and-braces: if reasoning_format is ignored (e.g. VISION_MODEL is
+    # overridden to a model that doesn't support it), strip any <think>
+    # block instead of returning it as the "medicine name".
+    raw_name = re.sub(r"<think>.*?</think>", "", raw_name, flags=re.DOTALL | re.IGNORECASE).strip()
+    return raw_name
 
 
 @app.post("/analyze-image")
@@ -1200,6 +1209,10 @@ def _extract_prescription_items(page_images: list[bytes]) -> dict:
             ],
             temperature=0,
             max_tokens=1024,
+            # Ask reasoning-capable Groq models (e.g. qwen3.6) to omit the
+            # <think> block entirely rather than stripping it client-side.
+            # Ignored by non-reasoning models, so this is safe either way.
+            extra_body={"reasoning_format": "hidden"},
         )
     except Exception:
         logger.exception("Vision model call failed for prescription analysis")
@@ -1209,10 +1222,22 @@ def _extract_prescription_items(page_images: list[bytes]) -> dict:
         )
 
     raw = (response.choices[0].message.content or "").strip()
+
+    # Reasoning models (e.g. qwen3.6) emit a <think>...</think> block of
+    # chain-of-thought before the actual answer - strip it before parsing.
+    raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL | re.IGNORECASE).strip()
+
     # Models sometimes wrap JSON in markdown fences despite instructions not
     # to - strip those before parsing rather than failing on them.
     if raw.startswith("```"):
         raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip(), flags=re.IGNORECASE)
+
+    # As a last resort, some models still add stray prose around the JSON -
+    # grab the outermost {...} block rather than failing outright.
+    if not raw.startswith("{"):
+        match = re.search(r"\{.*\}", raw, flags=re.DOTALL)
+        if match:
+            raw = match.group(0)
 
     try:
         parsed = json.loads(raw)
