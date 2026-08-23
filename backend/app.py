@@ -531,9 +531,19 @@ def rewrite_query(question: str, history: list[dict]) -> str:
             model=GROQ_MODEL,
             messages=[{"role": "user", "content": rewrite_prompt}],
             temperature=0,
-            max_tokens=60,
+            max_tokens=200,
+            # GROQ_MODEL (openai/gpt-oss-120b) reasons by default, which was
+            # silently eating part of the token budget on hidden <think>
+            # content and truncating the real answer (e.g. "price of ORS"
+            # -> "price of OR"). Turn reasoning off entirely for this call -
+            # it's a short rewrite, not a task that benefits from it.
+            extra_body={"reasoning_effort": "none"},
         )
         rewritten = (resp.choices[0].message.content or "").strip().strip('"')
+        # Belt-and-braces in case reasoning_effort is ignored by whatever
+        # model GROQ_MODEL is set to: strip any leaked <think> block before
+        # using the output as the rewritten query.
+        rewritten = re.sub(r"<think>.*?</think>", "", rewritten, flags=re.DOTALL | re.IGNORECASE).strip()
         result = rewritten or question
     except Exception:
         logger.exception("Query rewrite failed, falling back to raw question")
@@ -1017,6 +1027,10 @@ def _extract_medicine_name(image_bytes: bytes, mime_type: str) -> str:
             ],
             temperature=0,
             max_tokens=128,
+            # See _extract_prescription_items: suppress <think> chain-of-
+            # thought on reasoning-capable Groq models so it never leaks
+            # into the returned medicine name.
+            extra_body={"reasoning_format": "hidden"},
         )
     except Exception:
         logger.exception("Vision model call failed for image analysis")
@@ -1025,7 +1039,12 @@ def _extract_medicine_name(image_bytes: bytes, mime_type: str) -> str:
             detail="Image analysis failed. Please try again or type the medicine name.",
         )
 
-    return (response.choices[0].message.content or "").strip()
+    raw_name = (response.choices[0].message.content or "").strip()
+    # Belt-and-braces: if reasoning_format is ignored (e.g. VISION_MODEL is
+    # overridden to a model that doesn't support it), strip any <think>
+    # block instead of returning it as the "medicine name".
+    raw_name = re.sub(r"<think>.*?</think>", "", raw_name, flags=re.DOTALL | re.IGNORECASE).strip()
+    return raw_name
 
 
 @app.post("/analyze-image")
@@ -1200,6 +1219,10 @@ def _extract_prescription_items(page_images: list[bytes]) -> dict:
             ],
             temperature=0,
             max_tokens=1024,
+            # Ask reasoning-capable Groq models (e.g. qwen3.6) to omit the
+            # <think> block entirely rather than stripping it client-side.
+            # Ignored by non-reasoning models, so this is safe either way.
+            extra_body={"reasoning_format": "hidden"},
         )
     except Exception:
         logger.exception("Vision model call failed for prescription analysis")
@@ -1209,10 +1232,22 @@ def _extract_prescription_items(page_images: list[bytes]) -> dict:
         )
 
     raw = (response.choices[0].message.content or "").strip()
+
+    # Reasoning models (e.g. qwen3.6) emit a <think>...</think> block of
+    # chain-of-thought before the actual answer - strip it before parsing.
+    raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL | re.IGNORECASE).strip()
+
     # Models sometimes wrap JSON in markdown fences despite instructions not
     # to - strip those before parsing rather than failing on them.
     if raw.startswith("```"):
         raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip(), flags=re.IGNORECASE)
+
+    # As a last resort, some models still add stray prose around the JSON -
+    # grab the outermost {...} block rather than failing outright.
+    if not raw.startswith("{"):
+        match = re.search(r"\{.*\}", raw, flags=re.DOTALL)
+        if match:
+            raw = match.group(0)
 
     try:
         parsed = json.loads(raw)
@@ -1317,7 +1352,7 @@ def _lookup_lab_test_availability(name: str) -> dict:
 def _results_table_markdown(rows: list[dict]) -> str:
     lines = ["| Item | Type | Available? | Details | Page |", "|---|---|---|---|---|"]
     for r in rows:
-        available = " Yes" if r["found"] else " No"
+        available = "✅ Yes" if r["found"] else "❌ No"
         page = f"[Link]({r['page']})" if r["page"] else "—"
         lines.append(f"| {r['item']} | {r['type']} | {available} | {r['detail']} | {page} |")
     return "\n".join(lines)
