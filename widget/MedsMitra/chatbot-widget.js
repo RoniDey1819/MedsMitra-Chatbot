@@ -34,6 +34,15 @@
     CHAT_URL.replace(/\/chat\/?$/, "") + "/transcribe";
   const SHOW_VOICE_SEARCH = window.MED_CHATBOT_SHOW_VOICE_SEARCH !== false; // default: on
 
+  // Image/PDF medicine + lab-test lookup (attach button next to the
+  // input). Handles both a single medicine photo and a full multi-item
+  // prescription/lab order - defaults to CHAT_URL's origin + /analyze-prescription.
+  const ANALYZE_IMAGE_URL =
+    window.MED_CHATBOT_ANALYZE_IMAGE_URL ||
+    CHAT_URL.replace(/\/chat\/?$/, "") + "/analyze-prescription";
+  const SHOW_IMAGE_UPLOAD = window.MED_CHATBOT_SHOW_IMAGE_UPLOAD !== false; // default: on
+  const MAX_UPLOAD_MB = window.MED_CHATBOT_MAX_UPLOAD_MB || 12;
+
   // Greeting speech-bubble that pops up near the icon to invite a click.
   const GREETING_TEXT = window.MED_CHATBOT_GREETING_TEXT || "Say hi to Med! 👋";
   const SHOW_GREETING = window.MED_CHATBOT_SHOW_GREETING !== false; // default: on
@@ -136,15 +145,15 @@
     #mc-input-row { display: flex; align-items: center; border-top: 1px solid #ddd; }
     #mc-input { flex: 1; border: none; padding: 12px; font-size: 14px; outline: none; min-width: 0; }
     #mc-input:disabled { background: #f3f3f3; }
-    #mc-mic {
+    #mc-mic, #mc-attach {
       display: inline-flex; align-items: center; justify-content: center;
       width: 34px; height: 34px; margin: 0 2px; padding: 0; flex-shrink: 0;
       border-radius: 50%; border: none; background: transparent; color: #666;
       cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
     }
-    #mc-mic:hover { background: #eee; }
+    #mc-mic:hover, #mc-attach:hover { background: #eee; }
     #mc-mic.mc-recording { background: #fde2e2; color: #d33; }
-    #mc-mic:disabled { opacity: 0.5; cursor: default; background: transparent; }
+    #mc-mic:disabled, #mc-attach:disabled { opacity: 0.5; cursor: default; background: transparent; }
     #mc-send { background: #0f766e; color: #fff; border: none; padding: 0 16px; cursor: pointer; font-size: 14px; }
     #mc-send:disabled { opacity: 0.5; cursor: default; }
     .mc-disclaimer { font-size: 11px; color: #888; padding: 6px 12px; text-align: center; }
@@ -216,6 +225,12 @@
     <div class="mc-disclaimer">Informational only. Please confirm with our pharmacist.</div>
     <div id="mc-input-row">
       <input id="mc-input" type="text" placeholder="Ask about a medicine..." />
+      <input id="mc-file-input" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none" />
+      <button id="mc-attach" type="button" title="Upload medicine photo or prescription (PDF/image)" aria-label="Upload medicine photo or prescription">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+        </svg>
+      </button>
       <button id="mc-mic" type="button" title="Voice search" aria-label="Voice search">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
@@ -235,6 +250,8 @@
   const clearBtn = win.querySelector("#mc-clear");
   const statusEl = win.querySelector("#mc-status");
   const micBtn = win.querySelector("#mc-mic");
+  const attachBtn = win.querySelector("#mc-attach");
+  const fileInput = win.querySelector("#mc-file-input");
 
   function showStatus(text) {
     statusEl.textContent = text;
@@ -511,6 +528,191 @@
       }
     });
   }
+
+  // ---------------------------------------------------------------
+  // Image / PDF medicine lookup - user picks a photo or PDF, it's POSTed
+  // to /analyze-image, and the streamed answer (based on the identified
+  // medicine name) is appended straight into the conversation, the same
+  // way a normal typed question's answer streams in.
+  // ---------------------------------------------------------------
+
+  if (!SHOW_IMAGE_UPLOAD) {
+    attachBtn.style.display = "none";
+  }
+
+  function addUserImageMessage(file) {
+    const div = document.createElement("div");
+    div.className = "mc-msg mc-user";
+    div.textContent = "📎 " + (file.name || "Uploaded file");
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  // Renders the /analyze-prescription result: plain lines as text, a
+  // GitHub-style "| a | b |" markdown table (if present) as a real HTML
+  // table. Kept narrowly scoped to this one endpoint's output rather than
+  // adding general markdown rendering to the chat bot's normal replies.
+  function renderPrescriptionResult(el, text) {
+    const lines = text.split("\n");
+    const tableStart = lines.findIndex((l) => /^\s*\|.*\|\s*$/.test(l));
+
+    if (tableStart === -1) {
+      el.textContent = text;
+      return;
+    }
+
+    const before = lines.slice(0, tableStart).join("\n").trim();
+    const tableLines = lines
+      .slice(tableStart)
+      .filter((l) => /^\s*\|.*\|\s*$/.test(l))
+      // drop the "|---|---|" separator row
+      .filter((l) => !/^\s*\|[\s:|-]+\|\s*$/.test(l));
+
+    const rows = tableLines.map((l) =>
+      l
+        .trim()
+        .replace(/^\||\|$/g, "")
+        .split("|")
+        .map((cell) => cell.trim()),
+    );
+
+    el.innerHTML = "";
+    if (before) {
+      const p = document.createElement("div");
+      p.style.marginBottom = "8px";
+      p.textContent = before;
+      el.appendChild(p);
+    }
+    if (!rows.length) return;
+
+    const table = document.createElement("table");
+    table.style.cssText = "border-collapse:collapse; width:100%; font-size:13px;";
+    rows.forEach((cells, rowIndex) => {
+      const tr = document.createElement("tr");
+      cells.forEach((cellText) => {
+        const cellTag = rowIndex === 0 ? "th" : "td";
+        const cellEl = document.createElement(cellTag);
+        cellEl.style.cssText =
+          "border:1px solid #ccc; padding:4px 6px; text-align:left;" +
+          (rowIndex === 0 ? " background:#f0f0f0;" : "");
+
+        // The Page column may contain "[Link](url)" - render as an <a>.
+        const linkMatch = cellText.match(/^\[([^\]]*)\]\(([^)]+)\)$/);
+        if (linkMatch) {
+          const a = document.createElement("a");
+          a.href = linkMatch[2];
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.textContent = linkMatch[1];
+          cellEl.appendChild(a);
+        } else {
+          cellEl.textContent = cellText;
+        }
+        tr.appendChild(cellEl);
+      });
+      table.appendChild(tr);
+    });
+    el.appendChild(table);
+  }
+
+  async function analyzeFile(file) {
+    const maxBytes = MAX_UPLOAD_MB * 1024 * 1024;
+    if (file.size > maxBytes) {
+      showStatus(`File too large (max ${MAX_UPLOAD_MB}MB)`);
+      setTimeout(() => showStatus(""), 3000);
+      return;
+    }
+
+    addUserImageMessage(file);
+    attachBtn.disabled = true;
+    inputEl.disabled = true;
+    sendBtn.disabled = true;
+    showStatus("Analyzing document…");
+
+    const botDiv = showTyping();
+    let received = "";
+    let gotFirstToken = false;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("session_id", sessionId);
+
+    try {
+      const res = await fetch(ANALYZE_IMAGE_URL, { method: "POST", body: formData });
+      if (!res.ok || !res.body) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.detail || `Request failed (${res.status})`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop();
+
+        for (const part of parts) {
+          const line = part.trim();
+          if (!line.startsWith("data:")) continue;
+
+          let payload;
+          try {
+            payload = JSON.parse(line.slice(5).trim());
+          } catch {
+            continue;
+          }
+
+          if (payload.token) {
+            if (!gotFirstToken) {
+              botDiv.innerHTML = "";
+              gotFirstToken = true;
+            }
+            received += payload.token;
+            renderPrescriptionResult(botDiv, received);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+          }
+
+          if (payload.error) {
+            botDiv.innerHTML = "";
+            botDiv.textContent = payload.error;
+            gotFirstToken = true;
+          }
+
+          if (payload.done && payload.session_id) {
+            sessionId = payload.session_id;
+            localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+          }
+        }
+      }
+
+      if (!gotFirstToken) {
+        botDiv.innerHTML = "";
+        botDiv.textContent = "Sorry, I couldn't process that file.";
+      }
+      showStatus("");
+    } catch (err) {
+      console.error("image-analysis: request failed", err);
+      botDiv.innerHTML = "";
+      botDiv.textContent = "Document analysis failed — please try again or type the medicine name.";
+      showStatus("");
+    } finally {
+      attachBtn.disabled = false;
+      inputEl.disabled = false;
+      sendBtn.disabled = false;
+    }
+  }
+
+  attachBtn.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files && fileInput.files[0];
+    fileInput.value = ""; // allow re-selecting the same file next time
+    if (file) analyzeFile(file);
+  });
 
   // ---------------------------------------------------------------
   // Wiring

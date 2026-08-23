@@ -16,6 +16,7 @@ Run:
     uvicorn app:app --reload --port 8000
 """
 
+import base64
 import json
 import logging
 import os
@@ -23,6 +24,7 @@ import re
 import uuid
 from typing import Optional
 
+import fitz  # PyMuPDF - used to rasterize PDF pages for the image-analysis endpoint
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -931,6 +933,501 @@ async def transcribe(audio: UploadFile = File(...)):
                 text, len(audio_bytes), audio.content_type)
 
     return {"text": text}
+
+
+# -------------------------------------------------------------------
+# Image / PDF medicine identification (vision LLM via Groq)
+# -------------------------------------------------------------------
+# User uploads a photo of a medicine strip/box/label, or a PDF (e.g. a
+# scanned prescription or product sheet). A vision-capable Groq model reads
+# the packaging and extracts the medicine name(s) it can identify. The
+# extracted name is then run through the *same* retrieval + chat pipeline
+# as a normal typed question, so the user gets stock/price/alternatives in
+# one step - matching the "auto-run through RAG" product decision (unlike
+# /transcribe, which only fills the input box for review).
+
+_ALLOWED_IMAGE_CONTENT_TYPES = {
+    "image/jpeg", "image/jpg", "image/png", "image/webp",
+}
+_ALLOWED_PDF_CONTENT_TYPES = {"application/pdf"}
+
+# Generous but bounded - phone photos can run a few MB each; PDFs (scanned
+# prescriptions) can run larger.
+_MAX_IMAGE_BYTES = 12 * 1024 * 1024
+_MAX_PDF_BYTES = 20 * 1024 * 1024
+
+# PDF -> image render resolution. 200 DPI is plenty for reading printed
+# packaging/label text without producing huge payloads.
+_PDF_RENDER_DPI = int(os.getenv("PDF_RENDER_DPI", "200"))
+
+VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
+
+_VISION_SYSTEM_PROMPT = """You identify medicine names from photos of packaging, \
+strips, bottles, labels, or scanned prescriptions/product sheets.
+
+Rules:
+1. Look only at what is visibly printed or written in the image.
+2. If you can identify one or more medicine/brand names, respond with ONLY
+   the name(s), comma-separated if there are several (e.g. "Paracetamol 500mg"
+   or "Azithral 500, Pantocid 40"). Prefer the printed brand/product name over
+   the generic/salt name if both appear.
+3. If handwriting is present (e.g. a doctor's prescription) and is legible,
+   extract the medicine name(s) from it the same way.
+4. If you cannot confidently identify any medicine name - the image is blank,
+   irrelevant, too blurry, or contains no legible medicine name - respond with
+   EXACTLY: NOT_FOUND
+5. Never guess a plausible-sounding name you cannot actually read. Never add
+   commentary, dosage explanations, or anything other than the name(s) or
+   NOT_FOUND."""
+
+
+def _pdf_first_page_to_jpeg_bytes(pdf_bytes: bytes) -> bytes:
+    """Rasterize a PDF's first page to JPEG bytes for the vision model.
+    Only the first page is used - this endpoint is for identifying a
+    medicine from a single label/prescription, not multi-page documents.
+    """
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    try:
+        if doc.page_count == 0:
+            raise HTTPException(status_code=400, detail="PDF has no pages.")
+        page = doc.load_page(0)
+        zoom = _PDF_RENDER_DPI / 72.0
+        pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
+        return pix.tobytes("jpeg")
+    finally:
+        doc.close()
+
+
+def _extract_medicine_name(image_bytes: bytes, mime_type: str) -> str:
+    b64_image = base64.b64encode(image_bytes).decode("ascii")
+    data_url = f"data:{mime_type};base64,{b64_image}"
+
+    try:
+        response = groq_client.chat.completions.create(
+            model=VISION_MODEL,
+            messages=[
+                {"role": "system", "content": _VISION_SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "What medicine name(s) can you identify in this image?"},
+                        {"type": "image_url", "image_url": {"url": data_url}},
+                    ],
+                },
+            ],
+            temperature=0,
+            max_tokens=128,
+        )
+    except Exception:
+        logger.exception("Vision model call failed for image analysis")
+        raise HTTPException(
+            status_code=502,
+            detail="Image analysis failed. Please try again or type the medicine name.",
+        )
+
+    return (response.choices[0].message.content or "").strip()
+
+
+@app.post("/analyze-image")
+async def analyze_image(
+    file: UploadFile = File(...),
+    session_id: Optional[str] = None,
+):
+    """Accepts an image or PDF, extracts the medicine name via a vision LLM,
+    then runs that name through the normal /chat pipeline (retrieval +
+    streamed answer) so the user immediately sees stock/price/alternatives -
+    same as if they had typed the name themselves.
+    """
+    content_type = (file.content_type or "").split(";")[0].strip().lower()
+    is_pdf = content_type in _ALLOWED_PDF_CONTENT_TYPES
+    is_image = content_type in _ALLOWED_IMAGE_CONTENT_TYPES
+
+    if not is_pdf and not is_image:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: {file.content_type}. Please upload a JPG, PNG, WEBP image or a PDF.",
+        )
+
+    raw_bytes = await file.read()
+    if not raw_bytes:
+        raise HTTPException(status_code=400, detail="Empty file upload.")
+
+    max_bytes = _MAX_PDF_BYTES if is_pdf else _MAX_IMAGE_BYTES
+    if len(raw_bytes) > max_bytes:
+        raise HTTPException(status_code=400, detail="File is too large.")
+
+    if is_pdf:
+        try:
+            image_bytes = _pdf_first_page_to_jpeg_bytes(raw_bytes)
+        except HTTPException:
+            raise
+        except Exception:
+            logger.exception("Failed to render PDF page for image analysis")
+            raise HTTPException(status_code=400, detail="Could not read that PDF. Please try a clear image instead.")
+        vision_mime_type = "image/jpeg"
+    else:
+        image_bytes = raw_bytes
+        vision_mime_type = content_type
+
+    extracted = _extract_medicine_name(image_bytes, vision_mime_type)
+    logger.info(
+        "Image analysis result: %r (source=%s, content_type=%s, size=%d bytes)",
+        extracted, "pdf" if is_pdf else "image", file.content_type, len(raw_bytes),
+    )
+
+    if not extracted or extracted.upper() == "NOT_FOUND":
+        def not_found_gen():
+            msg = "I couldn't make out a medicine name in that file. Could you try a clearer photo, or type the name instead?"
+            yield sse_event({"token": msg})
+            yield sse_event({"done": True, "session_id": session_id or ""})
+
+        return StreamingResponse(not_found_gen(), media_type="text/event-stream")
+
+    # Reuse the exact same retrieval + streaming chat pipeline a typed
+    # message goes through, so behaviour (history, spell-correction,
+    # fallback handling, etc.) stays identical either way.
+    chat_req = ChatRequest(message=extracted, session_id=session_id)
+    return chat(chat_req)
+
+
+# -------------------------------------------------------------------
+# Prescription analysis (medicines + lab tests, structured availability)
+# -------------------------------------------------------------------
+# Different from /analyze-image above: that endpoint extracts ONE medicine
+# name and answers conversationally via the normal /chat pipeline. This
+# endpoint is for a full prescription/lab-order document - it extracts
+# EVERY medicine and lab test mentioned (each tagged with the page it came
+# from), checks each one's availability directly against Supabase, and
+# streams back a single structured results table rather than prose.
+#
+# Medicines are checked against the `medicines` table (match_medicines) -
+# exact inventory, so stock/price is authoritative. Lab tests only exist as
+# crawled website content (see crawl_site.py's _extract_lab_tests), so they
+# are checked against `website_content` (match_website_content) instead;
+# a lab test "page" is the crawled page URL, a medicine has no URL (per the
+# schema in supabase_setup.sql - medicines carries no page/link column).
+
+# Multi-page prescriptions are common (a printed Rx + a lab order on a
+# second page) - unlike /analyze-image (single label/box), render every
+# page, capped so a huge PDF can't blow up latency/cost.
+_MAX_PRESCRIPTION_PAGES = int(os.getenv("MAX_PRESCRIPTION_PAGES", "5"))
+
+# Matching an extracted name back to inventory should be a near-exact
+# lookup, not broad semantic recall - keep this tighter than the general
+# chat SIMILARITY_THRESHOLD so a weakly-related medicine doesn't get
+# reported as "found".
+PRESCRIPTION_MED_SIMILARITY_THRESHOLD = float(
+    os.getenv("PRESCRIPTION_MED_SIMILARITY_THRESHOLD", "0.55")
+)
+PRESCRIPTION_LAB_SIMILARITY_THRESHOLD = float(
+    os.getenv("PRESCRIPTION_LAB_SIMILARITY_THRESHOLD", "0.45")
+)
+
+_PRESCRIPTION_EXTRACTION_PROMPT = """You read prescriptions, lab order forms, and \
+medicine/lab-test lists from images of scanned or photographed documents. You may \
+receive more than one image, each labeled with its page number - a single document \
+can span multiple pages.
+
+Extract every distinct medicine and every distinct lab test/investigation
+mentioned anywhere across all pages given to you.
+
+Respond with ONLY a JSON object (no markdown fences, no commentary) in this
+exact shape:
+
+{
+  "medicines": [
+    {"name": "<medicine or brand name as printed>", "strength": "<e.g. 500 mg, or empty string if not shown>", "page": <page number as an integer>}
+  ],
+  "lab_tests": [
+    {"name": "<lab test or panel name as printed>", "page": <page number as an integer>}
+  ]
+}
+
+Rules:
+1. Use only what is legibly printed or handwritten in the image(s). Never
+   invent an item that is not actually there.
+2. "page" is the page number (starting at 1) of the image where that item
+   appears.
+3. Prefer the printed brand/product name for medicines over the generic
+   salt name if both are shown.
+4. Do not include dosage instructions, quantities, or notes in "name" -
+   keep it to the medicine or test name itself.
+5. If nothing legible is found in either category, return empty arrays for
+   both, e.g. {"medicines": [], "lab_tests": []}.
+6. Output must be valid JSON and nothing else."""
+
+
+def _pdf_pages_to_jpeg_bytes(pdf_bytes: bytes, max_pages: int) -> list[bytes]:
+    """Rasterize up to max_pages of a PDF to JPEG bytes, one per page."""
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    try:
+        if doc.page_count == 0:
+            raise HTTPException(status_code=400, detail="PDF has no pages.")
+        zoom = _PDF_RENDER_DPI / 72.0
+        matrix = fitz.Matrix(zoom, zoom)
+        pages_to_render = min(doc.page_count, max_pages)
+        return [
+            doc.load_page(i).get_pixmap(matrix=matrix, alpha=False).tobytes("jpeg")
+            for i in range(pages_to_render)
+        ]
+    finally:
+        doc.close()
+
+
+def _extract_prescription_items(page_images: list[bytes]) -> dict:
+    """Sends one or more page images to the vision model and parses back
+    the structured {"medicines": [...], "lab_tests": [...]} result.
+    """
+    content = [{"type": "text", "text": (
+        "Extract every medicine and lab test from this prescription/lab "
+        f"order. {len(page_images)} page image(s) follow, in order "
+        "(page 1 first)."
+    )}]
+    for i, img_bytes in enumerate(page_images, start=1):
+        b64_image = base64.b64encode(img_bytes).decode("ascii")
+        content.append({"type": "text", "text": f"Page {i}:"})
+        content.append({
+            "type": "image_url",
+            "image_url": {"url": f"data:image/jpeg;base64,{b64_image}"},
+        })
+
+    try:
+        response = groq_client.chat.completions.create(
+            model=VISION_MODEL,
+            messages=[
+                {"role": "system", "content": _PRESCRIPTION_EXTRACTION_PROMPT},
+                {"role": "user", "content": content},
+            ],
+            temperature=0,
+            max_tokens=1024,
+        )
+    except Exception:
+        logger.exception("Vision model call failed for prescription analysis")
+        raise HTTPException(
+            status_code=502,
+            detail="Prescription analysis failed. Please try again or type the medicine name.",
+        )
+
+    raw = (response.choices[0].message.content or "").strip()
+    # Models sometimes wrap JSON in markdown fences despite instructions not
+    # to - strip those before parsing rather than failing on them.
+    if raw.startswith("```"):
+        raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip(), flags=re.IGNORECASE)
+
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        logger.warning("Prescription extraction returned non-JSON output: %r", raw)
+        return {"medicines": [], "lab_tests": []}
+
+    medicines = parsed.get("medicines") or []
+    lab_tests = parsed.get("lab_tests") or []
+    if not isinstance(medicines, list):
+        medicines = []
+    if not isinstance(lab_tests, list):
+        lab_tests = []
+    return {"medicines": medicines, "lab_tests": lab_tests}
+
+
+def _lookup_medicine_availability(name: str, strength: str) -> dict:
+    """Checks one extracted medicine name against inventory via
+    match_medicines. Returns a result row for the table, with no "page"
+    (medicines have no URL/page column in this schema).
+    """
+    query_text = f"{name} {strength}".strip()
+    row = {"item": name, "type": "Medicine", "found": False, "detail": "Not available", "page": ""}
+
+    try:
+        raw_embedding = embed_model.encode(query_text, show_progress_bar=False).tolist()
+    except Exception:
+        logger.exception("Embedding failed for prescription medicine=%r", query_text)
+        return row
+
+    query_embedding = "[" + ",".join(str(x) for x in raw_embedding) + "]"
+
+    try:
+        response = supabase.rpc(
+            "match_medicines",
+            {
+                "query_embedding": query_embedding,
+                "match_count": 1,
+                "similarity_threshold": PRESCRIPTION_MED_SIMILARITY_THRESHOLD,
+                "filter_category": None,
+                "filter_in_stock": None,
+            },
+        ).execute()
+    except Exception:
+        logger.exception("Supabase RPC failed for prescription medicine=%r", query_text)
+        return row
+
+    matches = response.data or []
+    if not matches:
+        return row
+
+    best = matches[0]
+    in_stock = best.get("in_stock")
+    stock_text = best.get("stock") or ("In stock" if in_stock else "Out of stock")
+    row["found"] = True
+    row["item"] = best.get("medicine_name") or name
+    row["detail"] = stock_text
+    return row
+
+
+def _lookup_lab_test_availability(name: str) -> dict:
+    """Checks one extracted lab test name against crawled website content
+    via match_website_content. Returns a result row with the page URL.
+    """
+    row = {"item": name, "type": "Lab Test", "found": False, "detail": "Not available", "page": ""}
+
+    try:
+        raw_embedding = embed_model.encode(name, show_progress_bar=False).tolist()
+    except Exception:
+        logger.exception("Embedding failed for prescription lab test=%r", name)
+        return row
+
+    query_embedding = "[" + ",".join(str(x) for x in raw_embedding) + "]"
+
+    try:
+        response = supabase.rpc(
+            "match_website_content",
+            {
+                "query_embedding": query_embedding,
+                "match_count": 1,
+                "similarity_threshold": PRESCRIPTION_LAB_SIMILARITY_THRESHOLD,
+            },
+        ).execute()
+    except Exception:
+        logger.exception("Supabase RPC failed for prescription lab test=%r", name)
+        return row
+
+    matches = response.data or []
+    if not matches:
+        return row
+
+    best = matches[0]
+    price_match = re.search(r"Price:\s*([^\s.(][^.(]*)", best.get("content", ""))
+    detail = f"Available - {price_match.group(1).strip()}" if price_match else "Available"
+
+    row["found"] = True
+    row["detail"] = detail
+    row["page"] = best.get("url") or ""
+    return row
+
+
+def _results_table_markdown(rows: list[dict]) -> str:
+    lines = ["| Item | Type | Available? | Details | Page |", "|---|---|---|---|---|"]
+    for r in rows:
+        available = "✅ Yes" if r["found"] else "❌ No"
+        page = f"[Link]({r['page']})" if r["page"] else "—"
+        lines.append(f"| {r['item']} | {r['type']} | {available} | {r['detail']} | {page} |")
+    return "\n".join(lines)
+
+
+@app.post("/analyze-prescription")
+async def analyze_prescription(
+    file: UploadFile = File(...),
+    session_id: Optional[str] = None,
+):
+    """Accepts a photo or PDF of a prescription/lab order, extracts every
+    medicine and lab test mentioned (with the page each appears on), checks
+    each against Supabase, and streams back one structured availability
+    table - unlike /analyze-image, which handles a single medicine and
+    answers conversationally.
+    """
+    content_type = (file.content_type or "").split(";")[0].strip().lower()
+    is_pdf = content_type in _ALLOWED_PDF_CONTENT_TYPES
+    is_image = content_type in _ALLOWED_IMAGE_CONTENT_TYPES
+
+    if not is_pdf and not is_image:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: {file.content_type}. Please upload a JPG, PNG, WEBP image or a PDF.",
+        )
+
+    raw_bytes = await file.read()
+    if not raw_bytes:
+        raise HTTPException(status_code=400, detail="Empty file upload.")
+
+    max_bytes = _MAX_PDF_BYTES if is_pdf else _MAX_IMAGE_BYTES
+    if len(raw_bytes) > max_bytes:
+        raise HTTPException(status_code=400, detail="File is too large.")
+
+    if is_pdf:
+        try:
+            page_images = _pdf_pages_to_jpeg_bytes(raw_bytes, _MAX_PRESCRIPTION_PAGES)
+        except HTTPException:
+            raise
+        except Exception:
+            logger.exception("Failed to render PDF pages for prescription analysis")
+            raise HTTPException(status_code=400, detail="Could not read that PDF. Please try a clear image instead.")
+    else:
+        page_images = [raw_bytes]
+
+    extraction = _extract_prescription_items(page_images)
+    medicines = extraction["medicines"]
+    lab_tests = extraction["lab_tests"]
+
+    logger.info(
+        "Prescription analysis extracted %d medicine(s), %d lab test(s) from %d page(s)",
+        len(medicines), len(lab_tests), len(page_images),
+    )
+
+    resolved_session_id = session_id or str(uuid.uuid4())
+
+    if not medicines and not lab_tests:
+        def not_found_gen():
+            msg = (
+                "I couldn't identify any medicines or lab tests in that document. "
+                "Could you try a clearer photo/scan, or type the names instead?"
+            )
+            yield sse_event({"token": msg})
+            yield sse_event({"done": True, "session_id": resolved_session_id})
+
+        return StreamingResponse(not_found_gen(), media_type="text/event-stream")
+
+    rows = []
+    for med in medicines:
+        name = str(med.get("name", "")).strip()
+        if not name:
+            continue
+        strength = str(med.get("strength", "") or "").strip()
+        result = _lookup_medicine_availability(name, strength)
+        result["page"] = ""  # medicines have no product URL in this schema
+        doc_page = med.get("page")
+        if doc_page:
+            result["item"] = f"{result['item']} (doc p.{doc_page})"
+        rows.append(result)
+
+    for test in lab_tests:
+        name = str(test.get("name", "")).strip()
+        if not name:
+            continue
+        result = _lookup_lab_test_availability(name)
+        doc_page = test.get("page")
+        if doc_page:
+            result["item"] = f"{result['item']} (doc p.{doc_page})"
+        rows.append(result)
+
+    # "Page" column in the results table = product/lab-test page URL on
+    # your site (per product decision). Which page of the *uploaded*
+    # document each item was read from is shown next to the item name
+    # instead, so that detail isn't lost even though it isn't the URL
+    # column.
+    table_markdown = _results_table_markdown(rows)
+    found_count = sum(1 for r in rows if r["found"])
+    intro = (
+        f"Here's what I found from your document ({found_count}/{len(rows)} available):\n\n"
+    )
+    full_answer = intro + table_markdown
+
+    def result_gen():
+        yield sse_event({"token": full_answer})
+        yield sse_event({"done": True, "session_id": resolved_session_id})
+
+    append_turn(resolved_session_id, "user", "[Uploaded prescription/lab order for availability check]")
+    append_turn(resolved_session_id, "assistant", full_answer)
+
+    return StreamingResponse(result_gen(), media_type="text/event-stream")
 
 
 # -------------------------------------------------------------------
