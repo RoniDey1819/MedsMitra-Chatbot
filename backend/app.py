@@ -1317,8 +1317,8 @@ def _lookup_lab_test_availability(name: str) -> dict:
 def _results_table_markdown(rows: list[dict]) -> str:
     lines = ["| Item | Type | Available? | Details | Page |", "|---|---|---|---|---|"]
     for r in rows:
-        available = "✅ Yes" if r["found"] else "❌ No"
-        page = f"[Link]({r['page']})" if r["page"] else "-"
+        available = " Yes" if r["found"] else " No"
+        page = f"[Link]({r['page']})" if r["page"] else "—"
         lines.append(f"| {r['item']} | {r['type']} | {available} | {r['detail']} | {page} |")
     return "\n".join(lines)
 
