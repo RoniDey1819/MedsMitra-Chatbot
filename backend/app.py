@@ -24,7 +24,7 @@ import uuid
 from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from openai import OpenAI
@@ -867,6 +867,69 @@ def reset_session(session_id: str):
     clear_history(session_id)
     logger.info("Cleared session=%s", session_id)
     return {"status": "cleared", "session_id": session_id}
+
+
+# -------------------------------------------------------------------
+# Voice Search (speech-to-text via Groq Whisper)
+# -------------------------------------------------------------------
+
+# Groq's Whisper endpoint accepts these container formats. MediaRecorder in
+# the browser defaults to webm (Chrome/Firefox) or mp4 (Safari) - both are
+# supported, so we don't need any client-side re-encoding.
+_ALLOWED_AUDIO_CONTENT_TYPES = {
+    "audio/webm", "audio/mp4", "audio/mpeg", "audio/mp3", "audio/wav",
+    "audio/x-wav", "audio/ogg", "audio/flac", "audio/m4a", "audio/x-m4a",
+}
+# Keep uploads small - this is short voice-search queries, not long-form
+# dictation. 15MB comfortably covers a couple minutes of compressed audio;
+# reject anything larger before it ever reaches Groq.
+_MAX_AUDIO_BYTES = 15 * 1024 * 1024
+
+TRANSCRIBE_MODEL = os.getenv("GROQ_WHISPER_MODEL", "whisper-large-v3-turbo")
+
+
+@app.post("/transcribe")
+async def transcribe(audio: UploadFile = File(...)):
+    """Speech-to-text for the mic button on the frontend. Returns plain
+    transcribed text; the frontend drops it into the chat input box for the
+    user to review before sending - it does NOT get piped straight into
+    /chat, so a bad transcription is never silently sent as a message.
+
+    No fixed `language` param is passed to Whisper: users switch between
+    English, Bangla, and Hindi (often within the same session, per existing
+    chat traffic), so we let Whisper auto-detect per request rather than
+    biasing toward one language and hurting the others.
+    """
+    if audio.content_type not in _ALLOWED_AUDIO_CONTENT_TYPES:
+        logger.warning("Rejected /transcribe upload with content_type=%r", audio.content_type)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported audio type: {audio.content_type}",
+        )
+
+    audio_bytes = await audio.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Empty audio upload.")
+    if len(audio_bytes) > _MAX_AUDIO_BYTES:
+        raise HTTPException(status_code=400, detail="Audio file too large.")
+
+    try:
+        transcription = groq_client.audio.transcriptions.create(
+            file=(audio.filename or "voice_query.webm", audio_bytes),
+            model=TRANSCRIBE_MODEL,
+            response_format="json",
+            temperature=0,
+        )
+    except Exception:
+        logger.exception("Transcription failed (filename=%r, content_type=%r, size=%d bytes)",
+                          audio.filename, audio.content_type, len(audio_bytes))
+        raise HTTPException(status_code=502, detail="Voice transcription failed. Please try again or type your question.")
+
+    text = (transcription.text or "").strip()
+    logger.info("Transcribed voice query: %r (%d bytes, content_type=%s)",
+                text, len(audio_bytes), audio.content_type)
+
+    return {"text": text}
 
 
 # -------------------------------------------------------------------

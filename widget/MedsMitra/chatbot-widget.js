@@ -27,6 +27,13 @@
   const ICON_URL = window.MED_CHATBOT_ICON_URL || null; // e.g. "https://yoursite.com/bot-icon.png" or a .gif
   const SESSION_STORAGE_KEY = "medsmitra_session_id";
 
+  // Voice search (mic button next to the input). Defaults to CHAT_URL's
+  // origin + /transcribe, so it normally needs no separate config.
+  const TRANSCRIBE_URL =
+    window.MED_CHATBOT_TRANSCRIBE_URL ||
+    CHAT_URL.replace(/\/chat\/?$/, "") + "/transcribe";
+  const SHOW_VOICE_SEARCH = window.MED_CHATBOT_SHOW_VOICE_SEARCH !== false; // default: on
+
   // Greeting speech-bubble that pops up near the icon to invite a click.
   const GREETING_TEXT = window.MED_CHATBOT_GREETING_TEXT || "Say hi to Med! 👋";
   const SHOW_GREETING = window.MED_CHATBOT_SHOW_GREETING !== false; // default: on
@@ -126,9 +133,18 @@
       margin-top: 6px; display: inline-block; background: #0f766e; color: #fff;
       border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer;
     }
-    #mc-input-row { display: flex; border-top: 1px solid #ddd; }
-    #mc-input { flex: 1; border: none; padding: 12px; font-size: 14px; outline: none; }
+    #mc-input-row { display: flex; align-items: center; border-top: 1px solid #ddd; }
+    #mc-input { flex: 1; border: none; padding: 12px; font-size: 14px; outline: none; min-width: 0; }
     #mc-input:disabled { background: #f3f3f3; }
+    #mc-mic {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px; margin: 0 2px; padding: 0; flex-shrink: 0;
+      border-radius: 50%; border: none; background: transparent; color: #666;
+      cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
+    }
+    #mc-mic:hover { background: #eee; }
+    #mc-mic.mc-recording { background: #fde2e2; color: #d33; }
+    #mc-mic:disabled { opacity: 0.5; cursor: default; background: transparent; }
     #mc-send { background: #0f766e; color: #fff; border: none; padding: 0 16px; cursor: pointer; font-size: 14px; }
     #mc-send:disabled { opacity: 0.5; cursor: default; }
     .mc-disclaimer { font-size: 11px; color: #888; padding: 6px 12px; text-align: center; }
@@ -200,6 +216,14 @@
     <div class="mc-disclaimer">Informational only. Please confirm with our pharmacist.</div>
     <div id="mc-input-row">
       <input id="mc-input" type="text" placeholder="Ask about a medicine..." />
+      <button id="mc-mic" type="button" title="Voice search" aria-label="Voice search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          <line x1="12" y1="19" x2="12" y2="23"></line>
+          <line x1="8" y1="23" x2="16" y2="23"></line>
+        </svg>
+      </button>
       <button id="mc-send">Send</button>
     </div>
   `;
@@ -210,6 +234,7 @@
   const sendBtn = win.querySelector("#mc-send");
   const clearBtn = win.querySelector("#mc-clear");
   const statusEl = win.querySelector("#mc-status");
+  const micBtn = win.querySelector("#mc-mic");
 
   function showStatus(text) {
     statusEl.textContent = text;
@@ -372,6 +397,119 @@
       "bot",
     );
     clearBtn.disabled = false;
+  }
+
+  // ---------------------------------------------------------------
+  // Voice search - records via MediaRecorder, POSTs to /transcribe,
+  // fills the input box for the user to review/edit (never auto-sent).
+  // ---------------------------------------------------------------
+
+  const voiceSupported =
+    SHOW_VOICE_SEARCH &&
+    !!navigator.mediaDevices &&
+    !!navigator.mediaDevices.getUserMedia &&
+    typeof MediaRecorder !== "undefined";
+
+  if (!voiceSupported) {
+    micBtn.style.display = "none";
+  }
+
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let isRecording = false;
+
+  async function startRecording() {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      console.error("voice-search: mic permission denied or unavailable", err);
+      showStatus("Mic access denied");
+      setTimeout(() => showStatus(""), 2500);
+      return;
+    }
+
+    const mimeType = MediaRecorder.isTypeSupported("audio/webm")
+      ? "audio/webm"
+      : ""; // let the browser pick (Safari -> audio/mp4)
+
+    mediaRecorder = mimeType
+      ? new MediaRecorder(stream, { mimeType })
+      : new MediaRecorder(stream);
+
+    audioChunks = [];
+    mediaRecorder.addEventListener("dataavailable", (e) => {
+      if (e.data.size > 0) audioChunks.push(e.data);
+    });
+
+    mediaRecorder.addEventListener("stop", () => {
+      stream.getTracks().forEach((t) => t.stop());
+      const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || "audio/webm" });
+      sendForTranscription(blob);
+    });
+
+    mediaRecorder.start();
+    isRecording = true;
+    micBtn.classList.add("mc-recording");
+    showStatus("Listening…");
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+    }
+    isRecording = false;
+    micBtn.classList.remove("mc-recording");
+  }
+
+  async function sendForTranscription(blob) {
+    showStatus("Transcribing…");
+    micBtn.disabled = true;
+
+    const extension = blob.type.includes("mp4") ? "mp4" : "webm";
+    const formData = new FormData();
+    formData.append("audio", blob, `voice_query.${extension}`);
+
+    try {
+      const res = await fetch(TRANSCRIBE_URL, { method: "POST", body: formData });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.detail || `Request failed (${res.status})`);
+      }
+      const data = await res.json();
+      const text = (data.text || "").trim();
+
+      if (!text) {
+        showStatus("Didn't catch that — try again");
+        setTimeout(() => showStatus(""), 2500);
+        return;
+      }
+
+      const nativeSetter = Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype,
+        "value",
+      ).set;
+      nativeSetter.call(inputEl, text);
+      inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+      inputEl.focus();
+      showStatus("");
+    } catch (err) {
+      console.error("voice-search: transcription request failed", err);
+      showStatus("Voice search failed — please type instead");
+      setTimeout(() => showStatus(""), 3000);
+    } finally {
+      micBtn.disabled = false;
+    }
+  }
+
+  if (voiceSupported) {
+    micBtn.addEventListener("click", () => {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    });
   }
 
   // ---------------------------------------------------------------
