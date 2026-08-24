@@ -537,7 +537,7 @@ def rewrite_query(question: str, history: list[dict]) -> str:
             # content and truncating the real answer (e.g. "price of ORS"
             # -> "price of OR"). Turn reasoning off entirely for this call -
             # it's a short rewrite, not a task that benefits from it.
-            extra_body={"reasoning_effort": "none"},
+            extra_body={"reasoning_effort": "low"},
         )
         rewritten = (resp.choices[0].message.content or "").strip().strip('"')
         # Belt-and-braces in case reasoning_effort is ignored by whatever
